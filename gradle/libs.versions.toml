@@ -7,6 +7,7 @@ appcompat = "1.7.1"
 material = "1.13.0"
 activity = "1.11.0"
 constraintlayout = "2.2.1"
+secretsGradlePlugin = "2.0.1" #tambahan secrets gradle plugin
 
 [libraries]
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -19,4 +20,6 @@ constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayo
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
+#tambahan untuk secrets gradle plugin
+secrets-gradle-plugin = { id = "com.google.android.libraries.mapsplatform.secrets-gradle-plugin", version.ref = "secretsGradlePlugin" }
 

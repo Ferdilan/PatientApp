@@ -1,11 +1,25 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
+    alias(libs.plugins.secrets.gradle.plugin)
+}
+
+// Kode untuk membaca file local.properties untuk keperluan MQTT
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.inputStream().use { localProperties.load(it) }
 }
 
 android {
     namespace = "com.example.patientapp"
     compileSdk {
         version = release(36)
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     defaultConfig {
@@ -16,6 +30,24 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        manifestPlaceholders["MAPS_API_KEY"] = localProperties.getProperty("MAPS_API_KEY", "")
+
+        buildConfigField(
+            "String",
+            "MQTT_HOST",
+            "\"${localProperties.getProperty("MQTT_HOST")}\""
+        )
+        buildConfigField(
+            "String",
+            "MQTT_USERNAME",
+            "\"${localProperties.getProperty("MQTT_USERNAME")}\""
+        )
+        buildConfigField(
+            "String",
+            "MQTT_PASSWORD",
+            "\"${localProperties.getProperty("MQTT_PASSWORD")}\""
+        )
     }
 
     buildTypes {
@@ -44,8 +76,6 @@ dependencies {
     // Google Maps
     implementation("com.google.android.gms:play-services-maps:18.2.0")
     implementation("com.google.android.gms:play-services-location:21.3.0")
-
-//    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
 
 
 

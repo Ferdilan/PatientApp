@@ -29,6 +29,7 @@ import com.google.android.gms.tasks.OnSuccessListener;
 
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
+import java.util.Locale;
 import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity implements MqttClientManager.MqttMessageListener, OnMapReadyCallback {
@@ -38,7 +39,8 @@ public class MainActivity extends AppCompatActivity implements MqttClientManager
 
     private MqttClientManager mqttManager;
     private TextView statusTextView;
-    private Button requestHelpButton;
+    private Button btnEmergency;
+    private Button btnTransport;
 
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
     private GoogleMap mMap; // Objek Peta
@@ -52,7 +54,8 @@ public class MainActivity extends AppCompatActivity implements MqttClientManager
         setContentView(R.layout.activity_main);
 
         statusTextView = findViewById(R.id.statusTextView); // Asumsikan Anda punya TextView ini di layout
-        requestHelpButton = findViewById(R.id.requestHelpButton); // Asumsikan Anda punya Button ini
+        btnEmergency = findViewById(R.id.btnEmergency);
+        btnTransport = findViewById(R.id.btnTransport);
 
         // --- INISIALISASI PETA ---
         // Dapatkan SupportMapFragment dan beri tahu saat peta siap digunakan.
@@ -66,10 +69,11 @@ public class MainActivity extends AppCompatActivity implements MqttClientManager
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
         // --- KONFIGURASI MQTT ---
-        String brokerUri = "tcp://mustang.rmq.cloudamqp.com:1883";
+        String brokerUri = com.example.patientapp.BuildConfig.MQTT_HOST;
+        String username = com.example.patientapp.BuildConfig.MQTT_USERNAME;
+        String password = com.example.patientapp.BuildConfig.MQTT_PASSWORD;
         this.clientId = "android-client-" + UUID.randomUUID().toString();
-        String username = "hjppbzvg:hjppbzvg";
-        String password = "zUg3ysf369ZnibIfjtSc7Qtj-ezmi5IB";
+
 
         // Inisialisasi MqttClientManager
         mqttManager = MqttClientManager.getInstance();
@@ -78,12 +82,24 @@ public class MainActivity extends AppCompatActivity implements MqttClientManager
         mqttManager.setSubscriptionTopic(subscriptionTopic);
         mqttManager.connect(this, brokerUri, clientId, username, password);
 
-        setupButtonListener();
+        setupButtonListeners();
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
+        });
+    }
+
+    private void setupButtonListeners() {
+        // Listener untuk Tombol DARURAT
+        btnEmergency.setOnClickListener(v -> {
+            sendHelpRequest("DARURAT"); // Kirim jenis layanan DARURAT
+        });
+
+        // Listener untuk Tombol TRANSPORT
+        btnTransport.setOnClickListener(v -> {
+            sendHelpRequest("TRANSPORT"); // Kirim jenis layanan TRANSPORT
         });
     }
 
@@ -153,30 +169,49 @@ public class MainActivity extends AppCompatActivity implements MqttClientManager
         }
     }
 
-    private void setupButtonListener() {
-        requestHelpButton.setOnClickListener(view -> {
-
+    private void sendHelpRequest(String jenisLayanan) {
             // Periksa apakah lokasi sudah didapat
             if (mCurrentLocation == null) {
                 Toast.makeText(this, "Lokasi belum didapat. Harap tunggu...", Toast.LENGTH_SHORT).show();
-                // Coba dapatkan lokasi lagi jika tombol ditekan
                 getLastKnownLocation();
                 return;
             }
 
-            String topic = "pasien/request";
+            String topic = "panggilan/masuk";
+
+            int id_pasien = 123; //id 123 sebagai contoh
 
             // --- GANTI PAYLOAD HARDCODED DENGAN LOKASI DINAMIS ---
-            String payload = "{\"patientId\":\"" + this.clientId +
-                    "\", \"name\":\"Pasien Darurat\", \"location\":{\"latitude\":" + mCurrentLocation.getLatitude() +
-                    ", \"longitude\":" + mCurrentLocation.getLongitude() + "}}";
+            String payload = String.format(Locale.US,
+                    "{\"id_pasien\": %d, \"lokasi_pasien_lat\": %f, \"lokasi_pasien_lon\": %f, \"jenis_layanan\": \"%s\"}",
+                    id_pasien,
+                    mCurrentLocation.getLatitude(),
+                    mCurrentLocation.getLongitude(),
+                    jenisLayanan
+            );
 
             // Publikasikan pesan
-            mqttManager.publish(topic, payload, 0);
+            mqttManager.publish(topic, payload, 1); //mengapa menggunakan qos 1?
 
             Toast.makeText(this, "Permintaan bantuan dikirim...", Toast.LENGTH_SHORT).show();
             statusTextView.setText("Menunggu respons...");
-        });
+
+            subscribeToStatusUpdates(id_pasien);
+    }
+
+    /**
+     * Berlangganan ke topik status T8
+     * @param id_pasien ID pasien saat ini
+     */
+    private void subscribeToStatusUpdates(int id_pasien) {
+        // Kita gunakan topik yang disederhanakan
+        String statusTopic = "panggilan/status/pasien/" + id_pasien;
+
+        // Pastikan manager tidak null dan terhubung
+        if (mqttManager != null) {
+            mqttManager.subscribe(statusTopic, 1); // QoS 1
+            Log.d(TAG, "Berlangganan ke topik status: " + statusTopic);
+        }
     }
 
     @Override
@@ -184,8 +219,22 @@ public class MainActivity extends AppCompatActivity implements MqttClientManager
         String payload = new String(message.getPayload());
         Log.d(TAG, "Pesan balasan diterima: " + payload);
 
+        // Dijalankan di UI Thread untuk memperbarui TextView
         runOnUiThread(() -> {
-            statusTextView.setText("Respons Diterima: " + payload);
+            // Di sini Anda akan mem-parsing JSON payload
+            // Untuk saat ini, kita tampilkan mentah:
+            statusTextView.setText("Respons Server: " + payload);
+
+            // Contoh Parsing (Opsional):
+            // try {
+            //    JSONObject json = new JSONObject(payload);
+            //    String status = json.getString("status_panggilan");
+            //    String driverId = json.getString("id_ambulans");
+            //    int eta = json.getInt("eta_detik") / 60; // ubah ke menit
+            //    statusTextView.setText("Driver " + driverId + " sedang " + status + ". ETA: " + eta + " menit.");
+            // } catch (JSONException e) {
+            //    statusTextView.setText("Respons Diterima (format salah): " + payload);
+            // }
         });
     }
 
