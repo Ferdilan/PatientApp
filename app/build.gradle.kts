@@ -63,20 +63,28 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
+    packaging {
+        resources {
+            excludes += "META-INF/INDEX.LIST"
+            excludes += "META-INF/io.netty.versions.properties"
+        }
+    }
 }
 
 dependencies {
 
-    // Paho MQTT
     implementation ("com.amazon.ion:ion-java:1.10.4")
-    implementation("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5")
-    implementation("org.eclipse.paho:org.eclipse.paho.android.service:1.1.1")
+//    implementation("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5")
+//    implementation("org.eclipse.paho:org.eclipse.paho.android.service:1.1.1")
+    implementation("com.hivemq:hivemq-mqtt-client:1.3.3")
     implementation("androidx.localbroadcastmanager:localbroadcastmanager:1.1.0")
 
     // Google Maps
     implementation("com.google.android.gms:play-services-maps:18.2.0")
     implementation("com.google.android.gms:play-services-location:21.3.0")
 
+    implementation("androidx.annotation:annotation:1.7.1")
 
 
     implementation(libs.appcompat)

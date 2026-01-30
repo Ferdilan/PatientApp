@@ -27,15 +27,12 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
 
-import org.eclipse.paho.client.mqttv3.MqttMessage;
-
 import java.util.Locale;
-import java.util.UUID;
 
-public class MainActivity extends AppCompatActivity implements MqttClientManager.MqttMessageListener, OnMapReadyCallback {
+// PERUBAHAN 1: Hapus 'implements MqttClientManager.MqttMessageListener'
+public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     private static final String TAG = "MainActivity";
-    private String clientId;
 
     private MqttClientManager mqttManager;
     private TextView statusTextView;
@@ -43,9 +40,9 @@ public class MainActivity extends AppCompatActivity implements MqttClientManager
     private Button btnTransport;
 
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
-    private GoogleMap mMap; // Objek Peta
-    private FusedLocationProviderClient fusedLocationClient; // Klien untuk mendapat lokasi
-    private Location mCurrentLocation; // Variabel untuk menyimpan lokasi terakhir
+    private GoogleMap mMap;
+    private FusedLocationProviderClient fusedLocationClient;
+    private Location mCurrentLocation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,12 +50,11 @@ public class MainActivity extends AppCompatActivity implements MqttClientManager
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
-        statusTextView = findViewById(R.id.statusTextView); // Asumsikan Anda punya TextView ini di layout
+        statusTextView = findViewById(R.id.statusTextView);
         btnEmergency = findViewById(R.id.btnEmergency);
         btnTransport = findViewById(R.id.btnTransport);
 
         // --- INISIALISASI PETA ---
-        // Dapatkan SupportMapFragment dan beri tahu saat peta siap digunakan.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         if (mapFragment != null) {
@@ -68,19 +64,14 @@ public class MainActivity extends AppCompatActivity implements MqttClientManager
         // Inisialisasi FusedLocationProviderClient
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
-        // --- KONFIGURASI MQTT ---
-        String brokerUri = com.example.patientapp.BuildConfig.MQTT_HOST;
-        String username = com.example.patientapp.BuildConfig.MQTT_USERNAME;
-        String password = com.example.patientapp.BuildConfig.MQTT_PASSWORD;
-        this.clientId = "android-client-" + UUID.randomUUID().toString();
+        // --- KONFIGURASI MQTT BARU (HIVEMQ) ---
+        // Kita tidak perlu lagi mengambil BuildConfig disini secara manual,
+        // karena MqttClientManager sudah menanganinya secara internal.
 
-
-        // Inisialisasi MqttClientManager
         mqttManager = MqttClientManager.getInstance();
-        mqttManager.setListener(this);
-        String subscriptionTopic = "client/" + clientId + "/notification";
-        mqttManager.setSubscriptionTopic(subscriptionTopic);
-        mqttManager.connect(this, brokerUri, clientId, username, password);
+
+        // PERUBAHAN 2: Cara Konek menggunakan Listener
+        connectToMqttBroker();
 
         setupButtonListeners();
 
@@ -91,156 +82,144 @@ public class MainActivity extends AppCompatActivity implements MqttClientManager
         });
     }
 
-    private void setupButtonListeners() {
-        // Listener untuk Tombol DARURAT
-        btnEmergency.setOnClickListener(v -> {
-            sendHelpRequest("DARURAT"); // Kirim jenis layanan DARURAT
-        });
+    private void connectToMqttBroker() {
+        statusTextView.setText("Menghubungkan ke Server...");
 
-        // Listener untuk Tombol TRANSPORT
-        btnTransport.setOnClickListener(v -> {
-            sendHelpRequest("TRANSPORT"); // Kirim jenis layanan TRANSPORT
+        mqttManager.connect(new MqttClientManager.ConnectionListener() {
+            @Override
+            public void onSuccess() {
+                runOnUiThread(() -> {
+                    statusTextView.setText("Terhubung ke Server (Siap).");
+                    Toast.makeText(MainActivity.this, "MQTT Connected!", Toast.LENGTH_SHORT).show();
+
+                    // Opsional: Subscribe ke topik notifikasi umum jika perlu
+                    // String myTopic = "client/notifikasi/umum";
+                    // mqttManager.subscribe(myTopic, (t, m) -> Log.d(TAG, "Notif: " + m));
+                });
+            }
+
+            @Override
+            public void onError(String errorMessage) {
+                runOnUiThread(() -> {
+                    statusTextView.setText("Koneksi Gagal: " + errorMessage);
+                    Log.e(TAG, "MQTT Error: " + errorMessage);
+                });
+            }
         });
     }
 
-    // --- Dipanggil saat peta siap digunakan ---
-    @Override
-    public void onMapReady(@NonNull GoogleMap googleMap) {
-        mMap = googleMap;
+    private void setupButtonListeners() {
+        btnEmergency.setOnClickListener(v -> sendHelpRequest("DARURAT"));
+        btnTransport.setOnClickListener(v -> sendHelpRequest("TRANSPORT"));
+    }
 
-        // Panggil fungsi untuk mendapatkan lokasi
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        mMap = googleMap;
         getLastKnownLocation();
     }
 
     private void getLastKnownLocation() {
-        // Cek izin terlebih dahulu
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
                 ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-
-            // Jika izin tidak ada, minta izin
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
                     LOCATION_PERMISSION_REQUEST_CODE);
             return;
         }
-        // Aktifkan tombol "My Location" (titik biru) di peta
+
         mMap.setMyLocationEnabled(true);
 
-        // Dapatkan lokasi terakhir
         fusedLocationClient.getLastLocation()
                 .addOnSuccessListener(this, new OnSuccessListener<Location>() {
                     @Override
                     public void onSuccess(Location location) {
                         if (location != null) {
-                            // Simpan lokasi ke variabel global
                             mCurrentLocation = location;
-
-                            // Buat objek LatLng untuk peta
                             LatLng userLocation = new LatLng(location.getLatitude(), location.getLongitude());
 
-                            // Tambahkan penanda (marker) di lokasi pengguna
-                            mMap.addMarker(new MarkerOptions().position(userLocation).title("Lokasi Saya"));
+                            mMap.clear(); // Bersihkan marker lama
+                            mMap.addMarker(new MarkerOptions().position(userLocation).title("Lokasi Jemput"));
+                            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 15.0f));
 
-                            // Arahkan kamera peta ke lokasi pengguna
-                            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 15.0f)); // Zoom level 15
-
-                            statusTextView.setText("Lokasi ditemukan. Siap mengirim bantuan.");
+                            statusTextView.setText("Lokasi siap. Silakan pilih layanan.");
                         } else {
-                            statusTextView.setText("Gagal mendapatkan lokasi. Aktifkan GPS Anda.");
-                            Log.w(TAG, "getLastLocation:onSuccess: Gagal mendapatkan lokasi (null)");
+                            statusTextView.setText("Gagal mendapatkan lokasi. Cek GPS.");
                         }
                     }
                 });
-        }
+    }
 
-    // --- Callback setelah pengguna merespon permintaan izin
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // Izin diberikan, coba dapatkan lokasi lagi
                 getLastKnownLocation();
             } else {
-                // Izin ditolak
-                Toast.makeText(this, "Izin lokasi ditolak. Aplikasi tidak dapat mengirim lokasi Anda.", Toast.LENGTH_LONG).show();
-                statusTextView.setText("Izin lokasi ditolak.");
+                Toast.makeText(this, "Izin lokasi ditolak.", Toast.LENGTH_LONG).show();
             }
         }
     }
 
     private void sendHelpRequest(String jenisLayanan) {
-            // Periksa apakah lokasi sudah didapat
-            if (mCurrentLocation == null) {
-                Toast.makeText(this, "Lokasi belum didapat. Harap tunggu...", Toast.LENGTH_SHORT).show();
-                getLastKnownLocation();
-                return;
-            }
+        if (mCurrentLocation == null) {
+            Toast.makeText(this, "Mencari lokasi...", Toast.LENGTH_SHORT).show();
+            getLastKnownLocation();
+            return;
+        }
 
-            String topic = "panggilan/masuk";
+        if (!mqttManager.isConnected()) {
+            Toast.makeText(this, "Sedang menyambungkan ulang ke server...", Toast.LENGTH_SHORT).show();
+            connectToMqttBroker();
+            return;
+        }
 
-            int id_pasien = 123; //id 123 sebagai contoh
+        // Topik Pemesanan
+        String topic = "panggilan/masuk";
+        int id_pasien = 123; // Nanti ambil dari SessionManager/Login
 
-            // --- GANTI PAYLOAD HARDCODED DENGAN LOKASI DINAMIS ---
-            String payload = String.format(Locale.US,
-                    "{\"id_pasien\": %d, \"lokasi_pasien_lat\": %f, \"lokasi_pasien_lon\": %f, \"jenis_layanan\": \"%s\"}",
-                    id_pasien,
-                    mCurrentLocation.getLatitude(),
-                    mCurrentLocation.getLongitude(),
-                    jenisLayanan
-            );
+        String payload = String.format(Locale.US,
+                "{\"id_pasien\": %d, \"lokasi_pasien_lat\": %f, \"lokasi_pasien_lon\": %f, \"jenis_layanan\": \"%s\"}",
+                id_pasien,
+                mCurrentLocation.getLatitude(),
+                mCurrentLocation.getLongitude(),
+                jenisLayanan
+        );
 
-            // Publikasikan pesan
-            mqttManager.publish(topic, payload, 1); //mengapa menggunakan qos 1?
+        // PERUBAHAN 3: Publish tanpa QoS (Default library sudah handle)
+        mqttManager.publish(topic, payload);
 
-            Toast.makeText(this, "Permintaan bantuan dikirim...", Toast.LENGTH_SHORT).show();
-            statusTextView.setText("Menunggu respons...");
+        Toast.makeText(this, "Meminta bantuan " + jenisLayanan + "...", Toast.LENGTH_SHORT).show();
+        statusTextView.setText("Mencari Driver...");
 
-            subscribeToStatusUpdates(id_pasien);
+        // Langsung subscribe untuk mendengar balasan status
+        subscribeToStatusUpdates(id_pasien);
     }
 
-    /**
-     * Berlangganan ke topik status T8
-     * @param id_pasien ID pasien saat ini
-     */
     private void subscribeToStatusUpdates(int id_pasien) {
-        // Kita gunakan topik yang disederhanakan
         String statusTopic = "panggilan/status/pasien/" + id_pasien;
 
-        // Pastikan manager tidak null dan terhubung
-        if (mqttManager != null) {
-            mqttManager.subscribe(statusTopic, 1); // QoS 1
-            Log.d(TAG, "Berlangganan ke topik status: " + statusTopic);
-        }
-    }
+        // PERUBAHAN 4: Subscribe menggunakan Lambda & runOnUiThread
+        mqttManager.subscribe(statusTopic, (topic, message) -> {
+            Log.d(TAG, "Update Status Masuk: " + message);
 
-    @Override
-    public void onMessageReceived(String topic, MqttMessage message) {
-        String payload = new String(message.getPayload());
-        Log.d(TAG, "Pesan balasan diterima: " + payload);
+            runOnUiThread(() -> {
+                // Tampilkan pesan mentah dari server/driver
+                statusTextView.setText("Status Terkini: " + message);
 
-        // Dijalankan di UI Thread untuk memperbarui TextView
-        runOnUiThread(() -> {
-            // Di sini Anda akan mem-parsing JSON payload
-            // Untuk saat ini, kita tampilkan mentah:
-            statusTextView.setText("Respons Server: " + payload);
-
-            // Contoh Parsing (Opsional):
-            // try {
-            //    JSONObject json = new JSONObject(payload);
-            //    String status = json.getString("status_panggilan");
-            //    String driverId = json.getString("id_ambulans");
-            //    int eta = json.getInt("eta_detik") / 60; // ubah ke menit
-            //    statusTextView.setText("Driver " + driverId + " sedang " + status + ". ETA: " + eta + " menit.");
-            // } catch (JSONException e) {
-            //    statusTextView.setText("Respons Diterima (format salah): " + payload);
-            // }
+                // Disini nanti Anda bisa menambahkan logika:
+                // Jika status == "accepted", pindah ke TrackingActivity
+                // if (message.contains("accepted")) { ... }
+            });
         });
     }
 
     @Override
     protected void onDestroy() {
-        mqttManager.disconnect();
+        if (mqttManager != null) {
+            mqttManager.disconnect();
+        }
         super.onDestroy();
     }
 }
