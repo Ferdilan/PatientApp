@@ -1,11 +1,8 @@
 package com.example.patientapp;
 
-import android.content.Context;
 import android.util.Log;
-
 import com.hivemq.client.mqtt.MqttClient;
 import com.hivemq.client.mqtt.mqtt3.Mqtt3AsyncClient;
-
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
@@ -37,11 +34,9 @@ public class MqttClientManager {
         return client != null && client.getState().isConnected();
     }
 
-    // --- FUNGSI CONNECT (SIMPEL) ---
-    // Callback opsional: Runnable onSuccess, Consumer<Throwable> onError
+    // --- CONNECT ---
     public interface ConnectionListener {
         void onSuccess();
-
         void onError(String errorMessage);
     }
 
@@ -134,102 +129,3 @@ public class MqttClientManager {
         }
     }
 }
-
-    // Interface untuk Callback Pesan (Lambda Friendly)
-//    public interface MessageListener {
-//        void onMessageReceived(String topic, MqttMessage message);
-//    }
-//
-//    // Simpan listener sementara (Simple version)
-//    private MessageListener currentListener;
-//
-//    private MqttClientManager() {
-//        // Singleton Constructor
-//    }
-
-//    public static synchronized MqttClientManager getInstance(Context context) {
-//        if (instance == null) {
-//            instance = new MqttClientManager();
-//        }
-//        return instance;
-//    }
-//
-//    // --- FIX ERROR 1: Tambah Method isConnected ---
-//    public boolean isConnected() {
-//        return client != null && client.isConnected();
-//    }
-
-    // --- FIX ERROR 2: Method connect yang simpel ---
-//    public void connect(IMqttActionListener callback) {
-//        // Kita butuh context, tapi karena Singleton ini dipanggil di Activity,
-//        // idealnya inisialisasi client dilakukan terpisah atau pass Context disini.
-//        // TAPI, agar kode TrackingActivity tidak error, kita akan mengakali sedikit.
-//        Log.e(TAG, "Gunakan connect(Context, Callback) agar lebih aman!");
-//    }
-
-//    // Method Connect yang SEBENARNYA dipakai
-//    public void connect(Context context, IMqttActionListener externalCallback) {
-//        String clientId = MqttClient.generateClientId();
-//        client = new MqttAndroidClient(context.getApplicationContext(), SERVER_URI, clientId);
-//
-//        client.setCallback(new MqttCallbackExtended() {
-//            @Override
-//            public void connectComplete(boolean reconnect, String serverURI) {
-//                Log.d(TAG, "Connected to: " + serverURI);
-//            }
-//            @Override
-//            public void connectionLost(Throwable cause) {
-//                Log.e(TAG, "Connection Lost");
-//            }
-//            @Override
-//            public void messageArrived(String topic, MqttMessage message) throws Exception {
-//                // Teruskan ke listener yang aktif
-//                if (currentListener != null) {
-//                    currentListener.onMessageReceived(topic, message);
-//                }
-//            }
-//            @Override
-//            public void deliveryComplete(IMqttDeliveryToken token) {}
-//        });
-//
-//        MqttConnectOptions options = new MqttConnectOptions();
-//        options.setAutomaticReconnect(true);
-//        options.setCleanSession(true);
-//
-//        try {
-//            client.connect(options, null, externalCallback);
-//        } catch (MqttException e) {
-//            e.printStackTrace();
-//        }
-//    }
-//
-//    // --- FIX ERROR 3: Subscribe dengan Callback (Lambda) ---
-//    public void subscribe(String topic, MessageListener listener) {
-//        if (client != null && client.isConnected()) {
-//            try {
-//                // Simpan listenernya
-//                this.currentListener = listener;
-//
-//                client.subscribe(topic, 1, null, new IMqttActionListener() {
-//                    @Override
-//                    public void onSuccess(IMqttToken asyncActionToken) {
-//                        Log.d(TAG, "Subscribed to " + topic);
-//                    }
-//                    @Override
-//                    public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
-//                        Log.e(TAG, "Failed to subscribe");
-//                    }
-//                });
-//            } catch (MqttException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//    }
-//
-//    // Helper untuk generate ID
-//    public static class MqttClient {
-//        public static String generateClientId() {
-//            return "Android_" + System.currentTimeMillis();
-//        }
-//    }
-//}
