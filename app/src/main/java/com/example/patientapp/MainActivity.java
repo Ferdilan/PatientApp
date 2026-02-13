@@ -1,6 +1,9 @@
 package com.example.patientapp;
 
+import static androidx.core.location.LocationManagerCompat.getCurrentLocation;
+
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
@@ -29,7 +32,6 @@ import com.google.android.gms.tasks.OnSuccessListener;
 
 import java.util.Locale;
 
-// PERUBAHAN 1: Hapus 'implements MqttClientManager.MqttMessageListener'
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     private static final String TAG = "MainActivity";
@@ -54,7 +56,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         btnEmergency = findViewById(R.id.btnEmergency);
         btnTransport = findViewById(R.id.btnTransport);
 
-        // --- INISIALISASI PETA ---
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         if (mapFragment != null) {
@@ -109,7 +110,25 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void setupButtonListeners() {
-        btnEmergency.setOnClickListener(v -> sendHelpRequest("DARURAT"));
+        btnEmergency.setOnClickListener(v -> {
+            if (mCurrentLocation == null) {
+                Toast.makeText(MainActivity.this, "Sedang mengunci lokasi GPS... Mohon tunggu 2 detik & tekan lagi.", Toast.LENGTH_LONG).show();
+                // Pancing update lokasi lagi (Force Update)
+                getLastKnownLocation();
+                return;
+            }
+
+            if (mCurrentLocation.getLatitude() == 0.0 && mCurrentLocation.getLongitude() == 0.0) {
+                Toast.makeText(MainActivity.this, "Lokasi belum akurat.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            Intent intent = new Intent(MainActivity.this, EmergencyConfirmationActivity.class);
+            // Kirim Lokasi Terakhir User
+            intent.putExtra("LATITUDE", mCurrentLocation.getLatitude());
+            intent.putExtra("LONGITUDE", mCurrentLocation.getLongitude());
+            startActivity(intent);
+        });
+//                sendHelpRequest("DARURAT"));
         btnTransport.setOnClickListener(v -> sendHelpRequest("TRANSPORT"));
     }
 

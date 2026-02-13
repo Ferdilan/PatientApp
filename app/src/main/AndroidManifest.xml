@@ -18,9 +18,20 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.PatientApp">
         <activity
-            android:name=".TrackingActivity"
+            android:name=".SearchingActivity"
             android:exported="false" />
-        <!-- API Google Maps -->
+        <activity
+            android:name=".EmergencyConfirmationActivity"
+            android:exported="false" />
+        <activity
+            android:name=".LoginActivity"
+            android:exported="false" />
+        <activity
+            android:name=".RegisterActivity"
+            android:exported="false" />
+        <activity
+            android:name=".TrackingActivity"
+            android:exported="false" /> <!-- API Google Maps -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="${MAPS_API_KEY}" />
@@ -33,8 +44,7 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity> <!-- service mqtt -->
-<!--        <service android:name="org.eclipse.paho.android.service.MqttService" />-->
+        </activity>
     </application>
 
 </manifest>
