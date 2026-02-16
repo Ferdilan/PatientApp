@@ -116,13 +116,14 @@
                     android:layout_marginTop="12dp"
                     android:hint="Alamat Lengkap"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etAlamatReg"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                        android:layout_height="47dp"
+                        android:gravity="top"
                         android:inputType="textMultiLine"
-                        android:minLines="2"
-                        android:gravity="top"/>
+                        android:minLines="2" />
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <TextView
@@ -159,17 +160,15 @@
                 <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:hint="Password Baru"
-                    app:passwordToggleEnabled="true"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etPassReg"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="textPassword"/>
-                </com.google.android.material.textfield.TextInputLayout>
+                    android:hint="Password"
+                    android:layout_marginTop="8dp">
 
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etPasswordReg"
+                        android:layout_width="320dp"
+                        android:layout_height="52dp"
+                        android:inputType="textPassword" />
+                </com.google.android.material.textfield.TextInputLayout>
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
@@ -177,7 +176,7 @@
             android:id="@+id/btnRegister"
             android:layout_width="match_parent"
             android:layout_height="60dp"
-            android:layout_marginTop="24dp"
+            android:layout_marginTop="21dp"
             android:text="DAFTAR SEKARANG"
             android:textSize="16sp"
             android:textStyle="bold"

@@ -1,5 +1,6 @@
 package com.example.patientapp.api;
 
+// Model Penerima Data
 public class AuthResponse {
     boolean error;
     String message;

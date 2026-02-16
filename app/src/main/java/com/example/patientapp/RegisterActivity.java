@@ -1,6 +1,7 @@
 package com.example.patientapp;
 
 import android.app.DatePickerDialog;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.widget.Button;
@@ -20,6 +21,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.example.patientapp.api.AuthResponse;
+import com.example.patientapp.api.RetrofitClient;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -53,10 +55,10 @@ public class RegisterActivity extends AppCompatActivity {
         etNik = findViewById(R.id.etNikReg);
         etNama = findViewById(R.id.etNamaReg);
         etAlamat = findViewById(R.id.etAlamatReg);
-        etPassword = findViewById(R.id.etPassReg);
         tvTglLahir = findViewById(R.id.tvTglLahir);
         rgJk = findViewById(R.id.rgJk);
         imgKtp = findViewById(R.id.imgKtp);
+        etPassword = findViewById(R.id.etPasswordReg);
         btnPilihKtp = findViewById(R.id.btnPilihKtp);
         btnRegister = findViewById(R.id.btnRegister);
 
@@ -103,7 +105,8 @@ public class RegisterActivity extends AppCompatActivity {
         String nama = etNama.getText().toString();
         String tgl = tvTglLahir.getText().toString();
         String alamat = etAlamat.getText().toString();
-        String pass = etPassword.getText().toString();
+        String password = etPassword.getText().toString();
+
 
         // Ambil Radio Button
         int selectedId = rgJk.getCheckedRadioButtonId();
@@ -114,29 +117,50 @@ public class RegisterActivity extends AppCompatActivity {
             return;
         }
 
+        if (nik.isEmpty() || password.isEmpty() || password.length() < 6) {
+            Toast.makeText(this, "Data tidak lengkap atau password kurang dari 6 karakter", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         // --- SIAPKAN REQUEST BODY ---
         RequestBody rbNik = RequestBody.create(MediaType.parse("text/plain"), nik);
         RequestBody rbNama = RequestBody.create(MediaType.parse("text/plain"), nama);
         RequestBody rbTgl = RequestBody.create(MediaType.parse("text/plain"), tgl);
         RequestBody rbAlamat = RequestBody.create(MediaType.parse("text/plain"), alamat);
-        RequestBody rbPass = RequestBody.create(MediaType.parse("text/plain"), pass);
         RequestBody rbJk = RequestBody.create(MediaType.parse("text/plain"), jk);
+        RequestBody rbPass = RequestBody.create(MediaType.parse("text/plain"), password);
 
         // Siapkan File Gambar
         RequestBody requestFile = RequestBody.create(MediaType.parse("image/*"), fileKtp);
         MultipartBody.Part bodyFoto = MultipartBody.Part.createFormData("foto_ktp", fileKtp.getName(), requestFile);
 
         // --- EKSEKUSI API ---
-        com.example.patientapp.api.RetrofitClient.getInstance().register(rbNik, rbNama, rbTgl, rbJk, rbAlamat, rbPass, bodyFoto)
+        RetrofitClient.getInstance()
+                .register(rbNik, rbNama, rbTgl, rbJk, rbAlamat, rbPass, bodyFoto)
                 .enqueue(new Callback<com.example.patientapp.api.AuthResponse>() {
                     @Override
                     public void onResponse(Call<com.example.patientapp.api.AuthResponse> call, Response<AuthResponse> response) {
                         if (response.isSuccessful() && response.body() != null) {
+                            AuthResponse resp = response.body();
+
                             if (!response.body().isError()) {
                                 Toast.makeText(RegisterActivity.this, "Registrasi Sukses!", Toast.LENGTH_SHORT).show();
+
+                                // 1. Ambil Data dari Server
+                                String idUser = resp.getData().getId();
+                                String namaUser = resp.getData().getNama();
+
+                                // 2. Simpan Session (Auto Login)
+                                SessionManager sessionManager = new SessionManager(RegisterActivity.this);
+                                sessionManager.createLoginSession(idUser, namaUser, nik);
+
+                                // 3. Pindah ke Halaman Utama
+                                Intent intent = new Intent(RegisterActivity.this, MainActivity.class);
+                                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+                                startActivity(intent);
                                 finish(); // Kembali ke Login
                             } else {
-                                Toast.makeText(RegisterActivity.this, response.body().getMessage(), Toast.LENGTH_SHORT).show();
+                                Toast.makeText(RegisterActivity.this, "Gagal: " + resp.getMessage(), Toast.LENGTH_SHORT).show();
                             }
                         } else {
                             Toast.makeText(RegisterActivity.this, "Gagal Register", Toast.LENGTH_SHORT).show();
@@ -145,7 +169,7 @@ public class RegisterActivity extends AppCompatActivity {
 
                     @Override
                     public void onFailure(Call<com.example.patientapp.api.AuthResponse> call, Throwable t) {
-                        Toast.makeText(RegisterActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(RegisterActivity.this, "Koneksi Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });
     }

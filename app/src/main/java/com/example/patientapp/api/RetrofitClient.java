@@ -5,9 +5,11 @@ import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
+// Konektor Jaringan
+
 public class RetrofitClient {
     // GANTI IP INI SESUAI IP LAPTOP/SERVER BACKEND ANDA
-    private static final String BASE_URL = "http://192.168.1.5:3000/api/";
+    private static final String BASE_URL = "http://192.168.100.133:3000/api/";
     private static Retrofit retrofit;
 
     public static ApiService getInstance() {

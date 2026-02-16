@@ -24,7 +24,7 @@
             android:padding="20dp">
 
             <TextView
-                android:id="@+id/tvStatus"
+                android:id="@+id/tvEstimasi"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Ambulans sedang menuju lokasi..."

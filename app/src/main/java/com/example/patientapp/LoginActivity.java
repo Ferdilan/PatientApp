@@ -13,6 +13,9 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.example.patientapp.api.AuthResponse;
+import com.example.patientapp.api.RetrofitClient;
+
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -30,14 +33,12 @@ public class LoginActivity extends AppCompatActivity {
         setContentView(R.layout.activity_login);
 
         // 1. Cek Sesi Dulu
-        session = new SessionManager(getApplicationContext());
-        if (session.isLoggedIn()) {
-            startActivity(new Intent(this, MainActivity.class));
-            finish();
-            return;
-        }
-
-        setContentView(R.layout.activity_login);
+//        session = new SessionManager(getApplicationContext());
+//        if (session.isLoggedIn()) {
+//            startActivity(new Intent(this, MainActivity.class));
+//            finish();
+//            return;
+//        }
 
         etNik = findViewById(R.id.etNik);
         etPassword = findViewById(R.id.etPassword);
@@ -63,31 +64,37 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        com.example.patientapp.api.RetrofitClient.getInstance().login(nik, pass).enqueue(new Callback<com.example.patientapp.api.AuthResponse>() {
+        RetrofitClient.getInstance().login(nik, pass).enqueue(new Callback<AuthResponse>() {
             @Override
-            public void onResponse(Call<com.example.patientapp.api.AuthResponse> call, Response<com.example.patientapp.api.AuthResponse> response) {
+            public void onResponse(Call<com.example.patientapp.api.AuthResponse> call, Response<AuthResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    com.example.patientapp.api.AuthResponse resp = response.body();
+                    AuthResponse resp = response.body();
+
                     if (!resp.isError()) {
-                        // Login Sukses -> Simpan Sesi
+                        Toast.makeText(LoginActivity.this, "Login Berhasil", Toast.LENGTH_SHORT).show();
+
+                        // Simpan Sesi
+                        SessionManager session = new SessionManager(LoginActivity.this);
                         session.createLoginSession(
                                 resp.getData().getId(),
                                 resp.getData().getNama(),
                                 resp.getData().getNik()
                         );
-                        Toast.makeText(LoginActivity.this, "Login Berhasil", Toast.LENGTH_SHORT).show();
-                        startActivity(new Intent(LoginActivity.this, MainActivity.class));
+
+                        Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(intent);
                         finish();
                     } else {
-                        Toast.makeText(LoginActivity.this, resp.getMessage(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(LoginActivity.this, "Gagal: " + resp.getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 } else {
-                    Toast.makeText(LoginActivity.this, "Gagal Login", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(LoginActivity.this, "Gagal Terhubung ke Server: ", Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
-            public void onFailure(Call<com.example.patientapp.api.AuthResponse> call, Throwable t) {
+            public void onFailure(Call<AuthResponse> call, Throwable t) {
                 Toast.makeText(LoginActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });

@@ -30,13 +30,16 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
     private GoogleMap mMap;
     private Marker ambulanceMarker;
     private MqttClientManager mqttManager;
-    private String idDriver = "1"; // Default
+
+    private String idAmbulans;   // Bukan int lagi, dan jangan di-hardcode
+    private String namaDriver;
+    private String platNomor;
 
     // Variabel Animasi
     private Handler handler = new Handler();
 
     // UI Components
-    private TextView tvDriverName, tvLicensePlate, tvStatus;
+    private TextView tvNamaDriver, tvPlatNomor, tvEstimasi, tvStatus;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,21 +47,28 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
         setContentView(R.layout.activity_tracking);
 
         // 1. Inisialisasi View
-        tvDriverName = findViewById(R.id.tvDriverName);
-        tvLicensePlate = findViewById(R.id.tvLicensePlate);
-        tvStatus = findViewById(R.id.tvStatus);
+        tvNamaDriver = findViewById(R.id.tvDriverName);
+        tvPlatNomor = findViewById(R.id.tvLicensePlate);
+        tvEstimasi = findViewById(R.id.tvEstimasi);
 
-        // 2. AMBIL DATA DARI INTENT
-        if (getIntent().hasExtra("DRIVER_ID")) {
-            idDriver = getIntent().getStringExtra("DRIVER_ID");
+        // 2. Tangkap data dari Activity sebelumnya
+        if (getIntent() != null) {
+            idAmbulans = getIntent().getStringExtra("ID_AMBULANS");
+            namaDriver = getIntent().getStringExtra("NAMA_DRIVER");
+            platNomor = getIntent().getStringExtra("PLAT_NOMOR");
         }
 
-        String namaSopir = getIntent().getStringExtra("DRIVER_NAME");
-        String nopol = getIntent().getStringExtra("DRIVER_PLATE");
+//        Validasi Safety (Jaga-jaga jika null)
+        if (idAmbulans == null) {
+            Toast.makeText(this, "Error: Data Ambulans tidak ditemukan!", Toast.LENGTH_SHORT).show();
+            finish(); // Tutup halaman jika tidak ada ID
+            return;
+        }
 
         // 3. Tampilkan ke Layar
-        if (namaSopir != null) tvDriverName.setText(namaSopir);
-        if (nopol != null) tvLicensePlate.setText(nopol);
+        tvNamaDriver.setText(namaDriver != null ? namaDriver : "Driver Sedang Menuju");
+        tvPlatNomor.setText(platNomor != null ? platNomor : "-- ---- --");
+        tvEstimasi.setText("Menghitung..."); // Default text
 
         // 4. Siapkan Peta
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -74,6 +84,8 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+
+        mMap.getUiSettings().setZoomControlsEnabled(true);
 
         // Posisikan kamera awal
         LatLng defaultLoc = new LatLng(-7.2575, 112.7521);
@@ -106,7 +118,7 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
     }
 
     private void subscribeToDriverLocation() {
-        String topic = "ambulans/lokasi/update/" + idDriver;
+        String topic = "ambulans/lokasi/update/" + idAmbulans;
 
         // PERUBAHAN: Subscribe HiveMQ langsung terima String (message)
         mqttManager.subscribe(topic, (topicReceived, message) -> {
@@ -162,7 +174,7 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
         Projection proj = mMap.getProjection();
         Point startPoint = proj.toScreenLocation(marker.getPosition());
         final LatLng startLatLng = proj.fromScreenLocation(startPoint);
-        final long duration = 2000;
+        final long duration = 1000;
 
         final Interpolator interpolator = new LinearInterpolator();
 
@@ -183,5 +195,14 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
                 }
             }
         });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // Bersihkan koneksi saat keluar agar tidak memory leak
+        if (mqttManager != null && idAmbulans != null) {
+            // mqttManager.unsubscribe("ambulans/lokasi/" + idAmbulans); // Jika ada method unsubscribe
+        }
     }
 }

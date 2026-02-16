@@ -52,6 +52,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
+        androidx.appcompat.widget.Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
         statusTextView = findViewById(R.id.statusTextView);
         btnEmergency = findViewById(R.id.btnEmergency);
         btnTransport = findViewById(R.id.btnTransport);
@@ -123,6 +126,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 return;
             }
             Intent intent = new Intent(MainActivity.this, EmergencyConfirmationActivity.class);
+            // Kirim Lokasi Terakhir User
             // Kirim Lokasi Terakhir User
             intent.putExtra("LATITUDE", mCurrentLocation.getLatitude());
             intent.putExtra("LONGITUDE", mCurrentLocation.getLongitude());
@@ -196,11 +200,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         // Topik Pemesanan
         String topic = "panggilan/masuk";
-        int id_pasien = 123; // Nanti ambil dari SessionManager/Login
+        SessionManager session = new SessionManager(this);
+        String idPasien = session.getUserDetails().get(SessionManager.KEY_ID);
+
 
         String payload = String.format(Locale.US,
-                "{\"id_pasien\": %d, \"lokasi_pasien_lat\": %f, \"lokasi_pasien_lon\": %f, \"jenis_layanan\": \"%s\"}",
-                id_pasien,
+                "{\"id_pasien\": %s, \"lokasi_pasien_lat\": %f, \"lokasi_pasien_lon\": %f, \"jenis_layanan\": \"%s\"}",
+                idPasien,
                 mCurrentLocation.getLatitude(),
                 mCurrentLocation.getLongitude(),
                 jenisLayanan
@@ -213,10 +219,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         statusTextView.setText("Mencari Driver...");
 
         // Langsung subscribe untuk mendengar balasan status
-        subscribeToStatusUpdates(id_pasien);
+        subscribeToStatusUpdates(idPasien);
     }
 
-    private void subscribeToStatusUpdates(int id_pasien) {
+    private void subscribeToStatusUpdates(String id_pasien) {
         String statusTopic = "panggilan/status/pasien/" + id_pasien;
 
         // PERUBAHAN 4: Subscribe menggunakan Lambda & runOnUiThread
@@ -232,6 +238,28 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 // if (message.contains("accepted")) { ... }
             });
         });
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(android.view.Menu menu) {
+        getMenuInflater().inflate(R.menu.main_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(android.view.MenuItem item) {
+        int id = item.getItemId();
+
+        if (id == R.id.menu_profile) {
+            // Buka Halaman Profil
+            startActivity(new Intent(this, ProfileActivity.class));
+            return true;
+        } else if (id == R.id.menu_history) {
+            // Buka Halaman Riwayat
+             startActivity(new Intent(this, HistoryActivity.class));
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     @Override

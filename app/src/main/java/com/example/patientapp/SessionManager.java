@@ -1,9 +1,11 @@
 package com.example.patientapp;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import java.util.HashMap;
 
+//Penyimpanan Sesi Login
 public class SessionManager {
     SharedPreferences pref;
     SharedPreferences.Editor editor;
@@ -48,5 +50,8 @@ public class SessionManager {
         editor.clear();
         editor.commit();
         // Redirect ke LoginActivity di sini atau di Activity pemanggil
+        Intent i = new Intent(_context, LoginActivity.class);
+        i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+        _context.startActivity(i);
     }
 }
