@@ -14,7 +14,6 @@ public class EmergencyConfirmationActivity extends AppCompatActivity {
     private double currentLat = 0.0;
     private double currentLng = 0.0;
 
-    // MQTT Manager (Asumsi sudah ada Singleton seperti di Driver App)
     private MqttClientManager mqttManager;
 
     @Override

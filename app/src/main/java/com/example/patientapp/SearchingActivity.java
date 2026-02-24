@@ -42,7 +42,7 @@ public class SearchingActivity extends AppCompatActivity {
 
         // 1. Subscribe ke Topik Respons Pribadi
         // Topik: pasien/respons/{ID_SAYA}
-        String responseTopic = "pasien/respons/" + myId;
+        String responseTopic = "panggilan/status/pasien/" + myId;
 
         Log.d("Searching", "Menunggu balasan di topik: " + responseTopic);
 
@@ -68,32 +68,40 @@ public class SearchingActivity extends AppCompatActivity {
 
         try {
             JSONObject json = new JSONObject(jsonMessage);
-            String status = json.optString("status");
-            String driverId = json.optString("id_driver");
+            String status = json.optString("status_panggilan", "");
+            String ambulansId = json.optString("id_ambulans");
+            String idPanggilan = json.optString("id_panggilan");
+
 
             // Validasi: Apakah driver MENERIMA?
-            if ("ACCEPTED".equalsIgnoreCase(status)) {
+            if ("menuju_lokasi".equalsIgnoreCase(status)) {
                 isFound = true;
                 tvStatus.setText("AMBULANS DITEMUKAN!");
 
                 // Beri jeda 1 detik agar user baca status "Ditemukan"
                 new Handler().postDelayed(() -> {
-                    Intent intent = new Intent(SearchingActivity.this, TrackingActivity.class);
-                    intent.putExtra("ID_DRIVER", driverId); // PENTING: Bawa ID Driver ke peta
+                    try {
+                        Intent intent = new Intent(SearchingActivity.this, TrackingActivity.class);
+                        intent.putExtra("id_ambulans", ambulansId); // PENTING: Bawa ID Ambulans ke TrackingActivity
+                        intent.putExtra("id_panggilan", idPanggilan); // PENTING: Bawa ID ke peta
 
-                    // (Opsional) Bawa data lokasi driver awal jika ada di JSON
-                    double latDriver = json.optDouble("lat_driver", 0.0);
-                    double lonDriver = json.optDouble("lon_driver", 0.0);
-                    intent.putExtra("LAT_DRIVER_AWAL", latDriver);
-                    intent.putExtra("LON_DRIVER_AWAL", lonDriver);
+                        // (Opsional) Bawa data lokasi driver awal jika ada di JSON
+//                    double latDriver = json.optDouble("lat_driver", 0.0);
+//                    double lonDriver = json.optDouble("lon_driver", 0.0);
+//                    intent.putExtra("LAT_DRIVER_AWAL", latDriver);
+//                    intent.putExtra("LON_DRIVER_AWAL", lonDriver);
 
-                    startActivity(intent);
-                    finish(); // Tutup layar searching
-                }, 1000);
-            }
-
+                        startActivity(intent);
+                        finish();// Tutup layar searching
+                    }catch (Exception e) {
+                        // JIKA TERJADI ERROR SAAT PINDAH, LOG AKAN MUNCUL MERAH DI SINI
+                        Log.e("SearchingActivity", "CRASH SAAT PINDAH ACTIVITY: " + e.getMessage(), e);
+                    }
+            }, 1000);
+        }
         } catch (Exception e) {
             e.printStackTrace();
+            Log.e("Searching", "Error parsing JSON JSON: " + jsonMessage);
         }
     }
 

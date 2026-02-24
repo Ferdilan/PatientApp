@@ -1,6 +1,9 @@
 package com.example.patientapp;
 
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Point;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
@@ -11,12 +14,14 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
@@ -53,9 +58,29 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
 
         // 2. Tangkap data dari Activity sebelumnya
         if (getIntent() != null) {
-            idAmbulans = getIntent().getStringExtra("ID_AMBULANS");
-            namaDriver = getIntent().getStringExtra("NAMA_DRIVER");
-            platNomor = getIntent().getStringExtra("PLAT_NOMOR");
+            // 1. AMBIL ID AMBULANS (Dengan proteksi String vs Integer)
+            idAmbulans = getIntent().getStringExtra("id_ambulans");
+            if (idAmbulans == null) {
+                // Jika null, mungkin sebelumnya dikirim sebagai integer. Coba tangkap sebagai int.
+                int idInt = getIntent().getIntExtra("id_ambulans", -1);
+                if (idInt != -1) {
+                    idAmbulans = String.valueOf(idInt);
+                }
+            }
+
+            // 2. TANGKAP NAMA & PLAT (Gunakan nilai default jika kosong)
+            namaDriver = getIntent().getStringExtra("nama_driver");
+            if (namaDriver == null) {
+                namaDriver = "Driver Menuju Lokasi"; // Nilai aman pengganti null
+            }
+
+            platNomor = getIntent().getStringExtra("plat_nomor");
+            if (platNomor == null) {
+                platNomor = "Segera Tiba"; // Nilai aman pengganti null
+            }
+
+            // (Opsional) Ambil ID Panggilan jika dibutuhkan
+            String idPanggilan = getIntent().getStringExtra("id_panggilan");
         }
 
 //        Validasi Safety (Jaga-jaga jika null)
@@ -151,7 +176,7 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
                         .position(newPos)
                         .title("Ambulans")
                         // Pastikan resource gambar ada, jika error ganti ke defaultMarker
-                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_ambulance_top_view))
+                        .icon(getResizedMarkerIcon(R.drawable.ic_ambulance_top_view, 120, 120))
                         .anchor(0.5f, 0.5f)
                         .flat(true);
 
@@ -204,5 +229,20 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
         if (mqttManager != null && idAmbulans != null) {
             // mqttManager.unsubscribe("ambulans/lokasi/" + idAmbulans); // Jika ada method unsubscribe
         }
+    }
+
+    private BitmapDescriptor getResizedMarkerIcon(int resourceId, int width, int height) {
+        Drawable drawable = ContextCompat.getDrawable(this, resourceId);
+        if (drawable == null) return null;
+
+        // Buat kanvas kosong dengan ukuran baru (width x height)
+        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+
+        // Gambar ulang ikon ke dalam kanvas yang sudah dikecilkan
+        drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+        drawable.draw(canvas);
+
+        return BitmapDescriptorFactory.fromBitmap(bitmap);
     }
 }
