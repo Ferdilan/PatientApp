@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="text_color_custom">#EEEEEE</color> <!-- Putih tulang -->
+    <color name="bg_card">#333333</color> <!-- Abu-abu sangat gelap -->
+</resources>

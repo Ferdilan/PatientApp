@@ -14,7 +14,7 @@ public class MqttClientManager {
     private Mqtt3AsyncClient client;
 
     private static final String SERVER_HOST = BuildConfig.MQTT_HOST;
-    private static final int SERVER_PORT = 1883;
+    private static final int SERVER_PORT = 8883; // Port MQTTS umum (SSL)
     private static final String USERNAME = BuildConfig.MQTT_USERNAME;
     private static final String PASSWORD = BuildConfig.MQTT_PASSWORD;
 
@@ -48,12 +48,13 @@ public class MqttClientManager {
 
         String clientId = "Android_" + UUID.randomUUID().toString().substring(0, 8);
 
-        // Build Client Dasar
+        // Build Client Dasar dengan TLS (SSL)
         client = MqttClient.builder()
                 .useMqttVersion3()
                 .identifier(clientId)
                 .serverHost(SERVER_HOST)
                 .serverPort(SERVER_PORT)
+                .sslWithDefaultConfig() // MENGAKTIFKAN TLS/SSL (MQTTS)
                 .automaticReconnectWithDefaultConfig() // Auto Reconnect
                 .buildAsync();
 
@@ -68,10 +69,10 @@ public class MqttClientManager {
                 .send()
                 .whenComplete((connAck, throwable) -> {
                     if (throwable != null) {
-                        Log.e(TAG, "Gagal Connect: " + throwable.getMessage());
+                        Log.e(TAG, "Gagal Connect (MQTTS): " + throwable.getMessage());
                         if (listener != null) listener.onError(throwable.getMessage());
                     } else {
-                        Log.d(TAG, "BERHASIL CONNECT ke " + SERVER_HOST);
+                        Log.d(TAG, "BERHASIL CONNECT ke " + SERVER_HOST + " via MQTTS");
                         if (listener != null) listener.onSuccess();
                     }
                 });
@@ -119,6 +120,20 @@ public class MqttClientManager {
                         Log.e(TAG, "Gagal Publish ke " + topic);
                     } else {
                         Log.d(TAG, "Terkirim ke " + topic);
+                    }
+                });
+    }
+
+    public void unsubscribe(String topic) {
+        if (client == null) return;
+        client.unsubscribeWith()
+                .topicFilter(topic)
+                .send()
+                .whenComplete((unsubAck, throwable) -> {
+                    if (throwable != null) {
+                        Log.e(TAG, "Gagal Unsubscribe: " + topic);
+                    } else {
+                        Log.d(TAG, "Sukses Unsubscribe: " + topic);
                     }
                 });
     }

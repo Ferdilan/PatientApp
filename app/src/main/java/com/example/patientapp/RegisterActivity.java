@@ -72,7 +72,6 @@ public class RegisterActivity extends AppCompatActivity {
                     if (uri != null) {
                         selectedImageUri = uri;
                         imgKtp.setImageURI(uri);
-                        // Konversi URI ke File
                         fileKtp = getFileFromUri(uri);
                     }
                 });
@@ -107,10 +106,25 @@ public class RegisterActivity extends AppCompatActivity {
         String alamat = etAlamat.getText().toString();
         String password = etPassword.getText().toString();
 
+        if (password.length() < 6) {
+            Toast.makeText(this, "Password minimal 6 karakter", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
         // Ambil Radio Button
         int selectedId = rgJk.getCheckedRadioButtonId();
         String jk = (selectedId != -1) ? ((RadioButton)findViewById(selectedId)).getText().toString() : "L";
+
+        String hashedPassword = hashPassword(password);
+
+        // --- SIAPKAN REQUEST BODY ---
+        RequestBody rbNik = RequestBody.create(MediaType.parse("text/plain"), nik);
+        RequestBody rbNama = RequestBody.create(MediaType.parse("text/plain"), nama);
+        RequestBody rbTgl = RequestBody.create(MediaType.parse("text/plain"), tgl);
+        RequestBody rbAlamat = RequestBody.create(MediaType.parse("text/plain"), alamat);
+        RequestBody rbJk = RequestBody.create(MediaType.parse("text/plain"), jk);
+        RequestBody rbPass = RequestBody.create(MediaType.parse("text/plain"), hashedPassword);
+
 
         if (nik.isEmpty() || fileKtp == null) {
             Toast.makeText(this, "Lengkapi data dan foto KTP", Toast.LENGTH_SHORT).show();
@@ -122,13 +136,7 @@ public class RegisterActivity extends AppCompatActivity {
             return;
         }
 
-        // --- SIAPKAN REQUEST BODY ---
-        RequestBody rbNik = RequestBody.create(MediaType.parse("text/plain"), nik);
-        RequestBody rbNama = RequestBody.create(MediaType.parse("text/plain"), nama);
-        RequestBody rbTgl = RequestBody.create(MediaType.parse("text/plain"), tgl);
-        RequestBody rbAlamat = RequestBody.create(MediaType.parse("text/plain"), alamat);
-        RequestBody rbJk = RequestBody.create(MediaType.parse("text/plain"), jk);
-        RequestBody rbPass = RequestBody.create(MediaType.parse("text/plain"), password);
+
 
         // Siapkan File Gambar
         RequestBody requestFile = RequestBody.create(MediaType.parse("image/*"), fileKtp);
@@ -152,7 +160,7 @@ public class RegisterActivity extends AppCompatActivity {
 
                                 // 2. Simpan Session (Auto Login)
                                 SessionManager sessionManager = new SessionManager(RegisterActivity.this);
-                                sessionManager.createLoginSession(idUser, namaUser, nik);
+                                sessionManager.createLoginSession(idUser, namaUser, nik, alamat, tgl, jk, resp.getData().getFoto());
 
                                 // 3. Pindah ke Halaman Utama
                                 Intent intent = new Intent(RegisterActivity.this, MainActivity.class);
@@ -191,6 +199,25 @@ public class RegisterActivity extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
             return null;
+        }
+    }
+
+    private String hashPassword(String password) {
+        try {
+            // Menggunakan algoritma SHA-256
+            java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(password.getBytes("UTF-8"));
+            StringBuilder hexString = new StringBuilder();
+
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return password; // Jika gagal, kembalikan password asli (fallback)
         }
     }
 }

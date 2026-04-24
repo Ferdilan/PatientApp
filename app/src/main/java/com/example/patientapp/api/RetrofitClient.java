@@ -1,15 +1,14 @@
 package com.example.patientapp.api;
 
+import com.example.patientapp.BuildConfig;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-// Konektor Jaringan
-
+// berfungsi untuk menghubungkan aplikasi dengan API.
 public class RetrofitClient {
-    // GANTI IP INI SESUAI IP LAPTOP/SERVER BACKEND ANDA
-    private static final String BASE_URL = "http://192.168.100.133:3000/api/";
+    private static final String BASE_URL = BuildConfig.API_URL;
     private static Retrofit retrofit;
 
     public static ApiService getInstance() {
@@ -19,6 +18,12 @@ public class RetrofitClient {
 
             OkHttpClient client = new OkHttpClient.Builder()
                     .addInterceptor(logging)
+                    .addInterceptor(chain -> {
+                        okhttp3.Request request = chain.request().newBuilder()
+                                .addHeader("ngrok-skip-browser-warning", "true")
+                                .build();
+                        return chain.proceed(request);
+                    })
                     .build();
 
             retrofit = new Retrofit.Builder()

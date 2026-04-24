@@ -55,6 +55,24 @@ public class LoginActivity extends AppCompatActivity {
         });
     }
 
+    private String hashPassword(String password) {
+        try {
+            java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(password.getBytes("UTF-8"));
+            StringBuilder hexString = new StringBuilder();
+
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return password;
+        }
+    }
+
     private void loginProcess() {
         String nik = etNik.getText().toString();
         String pass = etPassword.getText().toString();
@@ -64,7 +82,9 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        RetrofitClient.getInstance().login(nik, pass).enqueue(new Callback<AuthResponse>() {
+        String hashedPassword = hashPassword(pass);
+
+        RetrofitClient.getInstance().login(nik, hashedPassword).enqueue(new Callback<AuthResponse>() {
             @Override
             public void onResponse(Call<com.example.patientapp.api.AuthResponse> call, Response<AuthResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
@@ -78,7 +98,11 @@ public class LoginActivity extends AppCompatActivity {
                         session.createLoginSession(
                                 resp.getData().getId(),
                                 resp.getData().getNama(),
-                                resp.getData().getNik()
+                                resp.getData().getNik(),
+                                resp.getData().getAlamat(),
+                                resp.getData().getTgl(),
+                                resp.getData().getJk(),
+                                resp.getData().getFoto()
                         );
 
                         Intent intent = new Intent(LoginActivity.this, MainActivity.class);

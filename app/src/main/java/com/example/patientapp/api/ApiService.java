@@ -21,7 +21,7 @@ public interface ApiService {
 
     @FormUrlEncoded
     @POST("pasien/login")
-    Call<com.example.patientapp.api.AuthResponse> login(
+    Call<AuthResponse> login(
             @Field("nik") String nik,
             @Field("password") String password
     );
@@ -47,7 +47,6 @@ public interface ApiService {
         public List<HistoryModel> getData() { return data; }
     }
 
-    // Endpoint GET
     @GET("transaksi/riwayat/{id}")
     Call<HistoryResponse> getRiwayat(@Path("id") String idPasien);
 }

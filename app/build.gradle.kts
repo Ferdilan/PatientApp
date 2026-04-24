@@ -48,6 +48,11 @@ android {
             "MQTT_PASSWORD",
             "\"${localProperties.getProperty("MQTT_PASSWORD")}\""
         )
+        buildConfigField(
+            "String",
+            "API_URL",
+            "\"${localProperties.getProperty("API_URL")}\""
+        )
     }
 
     buildTypes {
@@ -79,10 +84,17 @@ dependencies {
 //    implementation("org.eclipse.paho:org.eclipse.paho.android.service:1.1.1")
     implementation("com.hivemq:hivemq-mqtt-client:1.3.3")
     implementation("androidx.localbroadcastmanager:localbroadcastmanager:1.1.0")
+    implementation ("com.github.bumptech.glide:glide:4.16.0")
+    annotationProcessor ("com.github.bumptech.glide:compiler:4.16.0")
 
     // Google Maps
     implementation("com.google.android.gms:play-services-maps:18.2.0")
     implementation("com.google.android.gms:play-services-location:21.3.0")
+    implementation("com.google.maps.android:android-maps-utils:3.4.0")
+    implementation("com.squareup.okhttp3:okhttp:4.10.0")
+    implementation("com.google.maps.android:android-maps-utils:3.4.0")
+    implementation("com.google.android.libraries.places:places:3.3.0")
+    implementation("com.google.code.gson:gson:2.10.1")
 
     implementation("androidx.annotation:annotation:1.7.1")
 

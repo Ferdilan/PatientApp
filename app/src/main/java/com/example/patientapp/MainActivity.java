@@ -1,8 +1,7 @@
 package com.example.patientapp;
 
-import static androidx.core.location.LocationManagerCompat.getCurrentLocation;
-
 import android.Manifest;
+import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
@@ -13,6 +12,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.IntentSenderRequest;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -20,17 +22,22 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.google.android.gms.common.api.ResolvableApiException;
 import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResponse;
+import com.google.android.gms.location.SettingsClient;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 
-import java.util.Locale;
+import org.json.JSONObject;
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
 
@@ -38,13 +45,25 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private MqttClientManager mqttManager;
     private TextView statusTextView;
-    private Button btnEmergency;
-    private Button btnTransport;
+    private Button btnCallAmbulance;
+    private TextView tvAddressDetected;
+    private BottomNavigationView bottomNavigation;
 
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
     private GoogleMap mMap;
     private FusedLocationProviderClient fusedLocationClient;
     private Location mCurrentLocation;
+    private com.google.android.gms.location.LocationCallback locationCallback;
+    private java.util.HashMap<String, com.google.android.gms.maps.model.Marker> ambulanceMarkers = new java.util.HashMap<>();
+
+    private ActivityResultLauncher<IntentSenderRequest> resolutionForResult =
+            registerForActivityResult(new ActivityResultContracts.StartIntentSenderForResult(), result -> {
+                if (result.getResultCode() == Activity.RESULT_OK) {
+                    fetchLiveLocation();
+                } else {
+                    Toast.makeText(this, "Aplikasi membutuhkan GPS aktif!", Toast.LENGTH_SHORT).show();
+                }
+            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,12 +71,17 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
+        checkAndRequestLocationSettings();
+
         androidx.appcompat.widget.Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        btnCallAmbulance = findViewById(R.id.btnCallAmbulance);
+        tvAddressDetected = findViewById(R.id.addressDetecteed);
         statusTextView = findViewById(R.id.statusTextView);
-        btnEmergency = findViewById(R.id.btnEmergency);
-        btnTransport = findViewById(R.id.btnTransport);
+        bottomNavigation = findViewById(R.id.bottom_navigation);
+
+        setupBottomNavigation();
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -65,19 +89,22 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             mapFragment.getMapAsync(this);
         }
 
-        // Inisialisasi FusedLocationProviderClient
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
-
-        // --- KONFIGURASI MQTT BARU (HIVEMQ) ---
-        // Kita tidak perlu lagi mengambil BuildConfig disini secara manual,
-        // karena MqttClientManager sudah menanganinya secara internal.
-
         mqttManager = MqttClientManager.getInstance();
 
-        // PERUBAHAN 2: Cara Konek menggunakan Listener
         connectToMqttBroker();
-
-        setupButtonListeners();
+        
+        btnCallAmbulance.setOnClickListener(v -> {
+            if (mCurrentLocation != null) {
+                Intent intent = new Intent(MainActivity.this, AmbulanceSelectionActivity.class);
+                intent.putExtra("LATITUDE", mCurrentLocation.getLatitude());
+                intent.putExtra("LONGITUDE", mCurrentLocation.getLongitude());
+                startActivity(intent);
+            } else {
+                Toast.makeText(this, "Mencari lokasi Anda...", Toast.LENGTH_SHORT).show();
+                fetchLiveLocation();
+            }
+        });
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -86,158 +113,164 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         });
     }
 
-    private void connectToMqttBroker() {
-        statusTextView.setText("Menghubungkan ke Server...");
+    private void setupBottomNavigation() {
+        bottomNavigation.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.nav_home) {
+                return true; // Stay on Home
+            } else if (id == R.id.nav_history) {
+                startActivity(new Intent(this, HistoryActivity.class));
+                return true;
+            } else if (id == R.id.nav_profile) {
+                startActivity(new Intent(this, ProfileActivity.class));
+                return true;
+            }
+            return false;
+        });
+        
+        // Ensure Home is selected by default
+        bottomNavigation.setSelectedItemId(R.id.nav_home);
+    }
 
+    private void checkAndRequestLocationSettings() {
+        LocationRequest locationRequest = LocationRequest.create();
+        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder().addLocationRequest(locationRequest);
+        builder.setAlwaysShow(true);
+
+        SettingsClient client = LocationServices.getSettingsClient(this);
+        Task<LocationSettingsResponse> task = client.checkLocationSettings(builder.build());
+
+        task.addOnFailureListener(this, e -> {
+            if (e instanceof ResolvableApiException) {
+                try {
+                    ResolvableApiException resolvable = (ResolvableApiException) e;
+                    IntentSenderRequest intentSenderRequest = new IntentSenderRequest.Builder(resolvable.getResolution()).build();
+                    resolutionForResult.launch(intentSenderRequest);
+                } catch (Exception sendEx) {
+                    Log.e(TAG, "Gagal resolusi GPS", sendEx);
+                }
+            }
+        });
+    }
+
+    private void connectToMqttBroker() {
         mqttManager.connect(new MqttClientManager.ConnectionListener() {
             @Override
             public void onSuccess() {
                 runOnUiThread(() -> {
-                    statusTextView.setText("Terhubung ke Server (Siap).");
-                    Toast.makeText(MainActivity.this, "MQTT Connected!", Toast.LENGTH_SHORT).show();
-
-                    // Opsional: Subscribe ke topik notifikasi umum jika perlu
-                    // String myTopic = "client/notifikasi/umum";
-                    // mqttManager.subscribe(myTopic, (t, m) -> Log.d(TAG, "Notif: " + m));
+                    Toast.makeText(MainActivity.this, "Server Terhubung", Toast.LENGTH_SHORT).show();
+                    dengarkanSemuaAmbulans();
                 });
             }
 
             @Override
             public void onError(String errorMessage) {
-                runOnUiThread(() -> {
-                    statusTextView.setText("Koneksi Gagal: " + errorMessage);
-                    Log.e(TAG, "MQTT Error: " + errorMessage);
-                });
+                Log.e(TAG, "MQTT Error: " + errorMessage);
             }
         });
-    }
-
-    private void setupButtonListeners() {
-        btnEmergency.setOnClickListener(v -> {
-            if (mCurrentLocation == null) {
-                Toast.makeText(MainActivity.this, "Sedang mengunci lokasi GPS... Mohon tunggu 2 detik & tekan lagi.", Toast.LENGTH_LONG).show();
-                // Pancing update lokasi lagi (Force Update)
-                getLastKnownLocation();
-                return;
-            }
-
-            if (mCurrentLocation.getLatitude() == 0.0 && mCurrentLocation.getLongitude() == 0.0) {
-                Toast.makeText(MainActivity.this, "Lokasi belum akurat.", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            Intent intent = new Intent(MainActivity.this, EmergencyConfirmationActivity.class);
-            // Kirim Lokasi Terakhir User
-            // Kirim Lokasi Terakhir User
-            intent.putExtra("LATITUDE", mCurrentLocation.getLatitude());
-            intent.putExtra("LONGITUDE", mCurrentLocation.getLongitude());
-            startActivity(intent);
-        });
-//                sendHelpRequest("DARURAT"));
-        btnTransport.setOnClickListener(v -> sendHelpRequest("TRANSPORT"));
     }
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-        getLastKnownLocation();
+        mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
+        fetchLiveLocation();
     }
 
-    private void getLastKnownLocation() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-                ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
-                    LOCATION_PERMISSION_REQUEST_CODE);
+    private void fetchLiveLocation() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_PERMISSION_REQUEST_CODE);
             return;
         }
 
-        mMap.setMyLocationEnabled(true);
+        if (mMap != null) mMap.setMyLocationEnabled(true);
 
-        fusedLocationClient.getLastLocation()
-                .addOnSuccessListener(this, new OnSuccessListener<Location>() {
-                    @Override
-                    public void onSuccess(Location location) {
-                        if (location != null) {
-                            mCurrentLocation = location;
-                            LatLng userLocation = new LatLng(location.getLatitude(), location.getLongitude());
+        LocationRequest locationRequest = LocationRequest.create();
+        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        locationRequest.setInterval(5000);
 
-                            mMap.clear(); // Bersihkan marker lama
-                            mMap.addMarker(new MarkerOptions().position(userLocation).title("Lokasi Jemput"));
-                            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 15.0f));
-
-                            statusTextView.setText("Lokasi siap. Silakan pilih layanan.");
-                        } else {
-                            statusTextView.setText("Gagal mendapatkan lokasi. Cek GPS.");
-                        }
+        locationCallback = new com.google.android.gms.location.LocationCallback() {
+            @Override
+            public void onLocationResult(com.google.android.gms.location.LocationResult locationResult) {
+                if (locationResult == null) return;
+                for (Location location : locationResult.getLocations()) {
+                    if (location != null) {
+                        mCurrentLocation = location;
+                        LatLng userLocation = new LatLng(location.getLatitude(), location.getLongitude());
+                        if (mMap != null) mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 15.0f));
+                        dapatkanNamaJalan(location);
+                        fusedLocationClient.removeLocationUpdates(locationCallback);
+                        break;
                     }
-                });
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                getLastKnownLocation();
-            } else {
-                Toast.makeText(this, "Izin lokasi ditolak.", Toast.LENGTH_LONG).show();
+                }
             }
-        }
+        };
+        fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, android.os.Looper.getMainLooper());
     }
 
-    private void sendHelpRequest(String jenisLayanan) {
-        if (mCurrentLocation == null) {
-            Toast.makeText(this, "Mencari lokasi...", Toast.LENGTH_SHORT).show();
-            getLastKnownLocation();
-            return;
-        }
-
-        if (!mqttManager.isConnected()) {
-            Toast.makeText(this, "Sedang menyambungkan ulang ke server...", Toast.LENGTH_SHORT).show();
-            connectToMqttBroker();
-            return;
-        }
-
-        // Topik Pemesanan
-        String topic = "panggilan/masuk";
-        SessionManager session = new SessionManager(this);
-        String idPasien = session.getUserDetails().get(SessionManager.KEY_ID);
-
-
-        String payload = String.format(Locale.US,
-                "{\"id_pasien\": %s, \"lokasi_pasien_lat\": %f, \"lokasi_pasien_lon\": %f, \"jenis_layanan\": \"%s\"}",
-                idPasien,
-                mCurrentLocation.getLatitude(),
-                mCurrentLocation.getLongitude(),
-                jenisLayanan
-        );
-
-        // PERUBAHAN 3: Publish tanpa QoS (Default library sudah handle)
-        mqttManager.publish(topic, payload);
-
-        Toast.makeText(this, "Meminta bantuan " + jenisLayanan + "...", Toast.LENGTH_SHORT).show();
-        statusTextView.setText("Mencari Driver...");
-
-        // Langsung subscribe untuk mendengar balasan status
-        subscribeToStatusUpdates(idPasien);
+    private void dapatkanNamaJalan(Location location) {
+        new Thread(() -> {
+            try {
+                android.location.Geocoder geocoder = new android.location.Geocoder(MainActivity.this, new java.util.Locale("id", "ID"));
+                java.util.List<android.location.Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
+                if (addresses != null && !addresses.isEmpty()) {
+                    String teks = addresses.get(0).getThoroughfare();
+                    if (teks == null) teks = addresses.get(0).getAddressLine(0);
+                    final String finalTeks = teks;
+                    runOnUiThread(() -> tvAddressDetected.setText("Alamat Terdeteksi: " + finalTeks));
+                }
+            } catch (Exception e) {
+                Log.e("GEO", "Gagal Geocode", e);
+            }
+        }).start();
     }
 
-    private void subscribeToStatusUpdates(String id_pasien) {
-        String statusTopic = "panggilan/status/pasien/" + id_pasien;
-
-        // PERUBAHAN 4: Subscribe menggunakan Lambda & runOnUiThread
-        mqttManager.subscribe(statusTopic, (topic, message) -> {
-            Log.d(TAG, "Update Status Masuk: " + message);
-
-            runOnUiThread(() -> {
-                // Tampilkan pesan mentah dari server/driver
-                statusTextView.setText("Status Terkini: " + message);
-
-                // Disini nanti Anda bisa menambahkan logika:
-                // Jika status == "accepted", pindah ke TrackingActivity
-                // if (message.contains("accepted")) { ... }
-            });
+    private void dengarkanSemuaAmbulans() {
+        mqttManager.subscribe("ambulans/lokasi/update/+", (topic, message) -> {
+            try {
+                String[] parts = topic.split("/");
+                String id = parts[parts.length - 1];
+                JSONObject json = new JSONObject(message);
+                double lat = json.getDouble("lokasi_latitude");
+                double lon = json.getDouble("lokasi_longitude");
+                float bearing = (float) json.optDouble("bearing", 0.0);
+                perbaruiPosisiAmbulans(id, lat, lon, bearing);
+            } catch (Exception e) { e.printStackTrace(); }
         });
+    }
+
+    private void perbaruiPosisiAmbulans(String id, double lat, double lon, float bearing) {
+        runOnUiThread(() -> {
+            if (mMap == null) return;
+            LatLng pos = new LatLng(lat, lon);
+
+            com.google.android.gms.maps.model.BitmapDescriptor icon = getResizedIcon(R.drawable.ic_ambulance_top_view, 80, 80);
+
+            if (ambulanceMarkers.containsKey(id)) {
+                com.google.android.gms.maps.model.Marker m = ambulanceMarkers.get(id);
+                if (m != null) {
+                    m.setPosition(pos);
+                    m.setRotation(bearing);
+                    m.setIcon(icon);
+                }
+            } else {
+                com.google.android.gms.maps.model.Marker m = mMap.addMarker(new com.google.android.gms.maps.model.MarkerOptions()
+                        .position(pos)
+                        .title("Ambulans " + id)
+                        .rotation(bearing)
+                        .flat(true)
+                        .anchor(0.5f, 0.5f)
+                        .icon(com.google.android.gms.maps.model.BitmapDescriptorFactory.fromResource(R.drawable.ic_ambulance_top_view)));
+                ambulanceMarkers.put(id, m);
+            }
+        });
+    }
+
+    private com.google.android.gms.maps.model.BitmapDescriptor getResizedIcon(int resourceId, int width, int height) {
+        android.graphics.Bitmap imageBitmap = android.graphics.BitmapFactory.decodeResource(getResources(), resourceId);
+        android.graphics.Bitmap resizedBitmap = android.graphics.Bitmap.createScaledBitmap(imageBitmap, width, height, false);
+        return com.google.android.gms.maps.model.BitmapDescriptorFactory.fromBitmap(resizedBitmap);
     }
 
     @Override
@@ -249,24 +282,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public boolean onOptionsItemSelected(android.view.MenuItem item) {
         int id = item.getItemId();
-
-        if (id == R.id.menu_profile) {
-            // Buka Halaman Profil
-            startActivity(new Intent(this, ProfileActivity.class));
-            return true;
-        } else if (id == R.id.menu_history) {
-            // Buka Halaman Riwayat
-             startActivity(new Intent(this, HistoryActivity.class));
-            return true;
-        }
+        if (id == R.id.menu_profile) startActivity(new Intent(this, ProfileActivity.class));
+        else if (id == R.id.menu_history) startActivity(new Intent(this, HistoryActivity.class));
+        else if (id == R.id.menu_nearby) startActivity(new Intent(this, NearbyHospitalsActivity.class));
         return super.onOptionsItemSelected(item);
     }
 
     @Override
     protected void onDestroy() {
-        if (mqttManager != null) {
-            mqttManager.disconnect();
-        }
+        if (mqttManager != null) mqttManager.disconnect();
         super.onDestroy();
     }
 }

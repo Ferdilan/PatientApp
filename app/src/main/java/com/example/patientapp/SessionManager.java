@@ -19,6 +19,11 @@ public class SessionManager {
     public static final String KEY_ID = "123";
     public static final String KEY_NAMA = "nama";
     public static final String KEY_NIK = "nik";
+    public static final String KEY_ALAMAT = "alamat";
+    public static final String KEY_TGL = "tgl";
+    public static final String KEY_JK = "jk";
+    public static final String KEY_FOTO = "foto";
+
 
     public SessionManager(Context context){
         this._context = context;
@@ -26,11 +31,15 @@ public class SessionManager {
         editor = pref.edit();
     }
 
-    public void createLoginSession(String id, String nama, String nik){
+    public void createLoginSession(String id, String nama, String nik, String alamat, String tgl, String jk, String foto){
         editor.putBoolean(IS_LOGIN, true);
         editor.putString(KEY_ID, id);
         editor.putString(KEY_NAMA, nama);
         editor.putString(KEY_NIK, nik);
+        editor.putString(KEY_ALAMAT, alamat);
+        editor.putString(KEY_TGL, tgl);
+        editor.putString(KEY_JK, jk);
+        editor.putString(KEY_FOTO, foto);
         editor.commit();
     }
 
@@ -43,7 +52,15 @@ public class SessionManager {
         user.put(KEY_ID, pref.getString(KEY_ID, null));
         user.put(KEY_NAMA, pref.getString(KEY_NAMA, null));
         user.put(KEY_NIK, pref.getString(KEY_NIK, null));
+        user.put(KEY_ALAMAT, pref.getString(KEY_ALAMAT, null));
+        user.put(KEY_TGL, pref.getString(KEY_TGL, null));
+        user.put(KEY_JK, pref.getString(KEY_JK, null));
+        user.put(KEY_FOTO, pref.getString(KEY_FOTO, null));
         return user;
+    }
+
+    public String getUserId() {
+        return pref.getString(KEY_ID, null);
     }
 
     public void logoutUser(){

@@ -13,6 +13,7 @@ public class EmergencyConfirmationActivity extends AppCompatActivity {
     private Button btnYes, btnNo;
     private double currentLat = 0.0;
     private double currentLng = 0.0;
+    String uniqueId = "REQ_" + System.currentTimeMillis();
 
     private MqttClientManager mqttManager;
 
@@ -53,6 +54,7 @@ public class EmergencyConfirmationActivity extends AppCompatActivity {
         // 1. Kirim MQTT ke Driver
         try {
             JSONObject json = new JSONObject();
+            json.put("id_panggilan", uniqueId);
             json.put("jenis_layanan", "DARURAT");
 //            json.put("kategori", "CRITICAL"); // Karena user bilang "Iya" pada daftar kritis
             json.put("lokasi_pasien_lat", currentLat);
@@ -73,6 +75,7 @@ public class EmergencyConfirmationActivity extends AppCompatActivity {
 
         // 2. Pindah ke Layar Mencari Driver
         Intent intent = new Intent(this, SearchingActivity.class);
+        intent.putExtra("id_panggilan", uniqueId);
         intent.putExtra("LATITUDE", currentLat);
         intent.putExtra("LONGITUDE", currentLng);
         startActivity(intent);

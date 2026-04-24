@@ -6,4 +6,9 @@
     <item
         android:id="@+id/menu_history"
         android:title="Riwayat Panggilan" />
+    <item
+        android:id="@+id/menu_nearby"
+        android:title="Rumah Sakit Terdekat"/>
+<!--        android:icon="@drawable/ic_hospital"-->
+<!--        app:showAsAction="ifRoom"-->
 </menu>

@@ -1,7 +1,10 @@
 package com.example.patientapp;
 
+import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -26,9 +29,20 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.maps.android.PolyUtil;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 public class TrackingActivity extends AppCompatActivity implements OnMapReadyCallback {
 
@@ -36,9 +50,18 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
     private Marker ambulanceMarker;
     private MqttClientManager mqttManager;
 
-    private String idAmbulans;   // Bukan int lagi, dan jangan di-hardcode
+    private String idAmbulans;
     private String namaDriver;
     private String platNomor;
+    private double latPasien;
+    private double lonPasien;
+    private LatLng lastRoutedLocation = null;
+    private com.google.android.gms.maps.model.Polyline currentPolyline = null;
+
+
+    private SessionManager session;
+    private String myPatientId;
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     // Variabel Animasi
     private Handler handler = new Handler();
@@ -51,10 +74,16 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tracking);
 
+        session = new SessionManager(this);
+        myPatientId = session.getUserDetails().get(SessionManager.KEY_ID);
+
         // 1. Inisialisasi View
         tvNamaDriver = findViewById(R.id.tvDriverName);
         tvPlatNomor = findViewById(R.id.tvLicensePlate);
         tvEstimasi = findViewById(R.id.tvEstimasi);
+
+        latPasien = getIntent().getDoubleExtra("lat_pasien", 0);
+        lonPasien = getIntent().getDoubleExtra("lon_pasien", 0);
 
         // 2. Tangkap data dari Activity sebelumnya
         if (getIntent() != null) {
@@ -109,14 +138,17 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-
+        mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
         mMap.getUiSettings().setZoomControlsEnabled(true);
 
-        // Posisikan kamera awal
-        LatLng defaultLoc = new LatLng(-7.2575, 112.7521);
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLoc, 15));
+        LatLng posisiPasien = new LatLng(latPasien, lonPasien);
+        mMap.addMarker(new MarkerOptions()
+                .position(posisiPasien)
+                .title("Lokasi Saya (Pasien)")
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)));
 
-        // Setelah peta siap, baru kita konek dan subscribe
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(posisiPasien, 14));
+
         connectAndSubscribe();
     }
 
@@ -143,37 +175,83 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
     }
 
     private void subscribeToDriverLocation() {
+        // Topik untuk mendengar pergerakan GPS Driver
         String topic = "ambulans/lokasi/update/" + idAmbulans;
-
-        // PERUBAHAN: Subscribe HiveMQ langsung terima String (message)
         mqttManager.subscribe(topic, (topicReceived, message) -> {
             Log.d("Tracking", "Lokasi Masuk: " + message);
-
-            // Update UI/Map Wajib di Thread UI
             runOnUiThread(() -> processLocationUpdate(message));
         });
+
+        String topicStatus = "panggilan/status/pasien/" + myPatientId;
+        mqttManager.subscribe(topicStatus, (topicReceived, message) -> {
+            Log.d("Tracking", "Status Masuk: " + message);
+            runOnUiThread(() -> processStatusUpdate(message));
+        });
+    }
+
+    private void processStatusUpdate(String jsonString) {
+        try {
+            JSONObject data = new JSONObject(jsonString);
+            String status = data.optString("status_panggilan", "");
+
+            if ("selesai".equalsIgnoreCase(status) || "COMPLETED".equalsIgnoreCase(status)) {
+                Toast.makeText(this, "Pengantaran Selesai", Toast.LENGTH_LONG).show();
+
+                // Pindah kembali ke Beranda (MainActivity) atau Halaman Rating
+                Intent intent = new Intent(TrackingActivity.this, MainActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(intent);
+                finish(); // Tutup halaman peta
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
     }
 
     private void processLocationUpdate(String jsonString) {
         try {
             JSONObject data = new JSONObject(jsonString);
-
-            // Ambil data Lat/Lng dari JSON
             double lat = data.getDouble("lokasi_latitude");
             double lon = data.getDouble("lokasi_longitude");
+            float bearing = data.has("bearing") ? (float) data.getDouble("bearing") : 0;
 
-            // Ambil arah (bearing) jika ada
-            float bearing = 0;
-            if (data.has("bearing")) {
-                bearing = (float) data.getDouble("bearing");
+            LatLng newAmbulancePos = new LatLng(lat, lon);
+            LatLng posisiPasien = new LatLng(latPasien, lonPasien);
+
+            // --- LOGIKA THROTTLING RUTE (API GOOGLE) ---
+            if (lastRoutedLocation == null) {
+                // Pertama kali ambulans terdeteksi -> Langsung gambar rute!
+                fetchRoute(newAmbulancePos, posisiPasien);
+                lastRoutedLocation = newAmbulancePos;
+            } else {
+                // Hitung jarak antara lokasi ambulans saat ini dengan lokasi saat rute terakhir digambar
+                float[] results = new float[1];
+                android.location.Location.distanceBetween(
+                        lastRoutedLocation.latitude, lastRoutedLocation.longitude,
+                        newAmbulancePos.latitude, newAmbulancePos.longitude,
+                        results
+                );
+                float distanceMovedInMeters = results[0];
+
+                // Jika ambulans sudah bergerak lebih dari 500 meter, REFRESH RUTE!
+                if (distanceMovedInMeters > 500) {
+                    Log.d("Tracking", "Ambulans bergerak > 500m. Memperbarui rute...");
+                    fetchRoute(newAmbulancePos, posisiPasien);
+                    lastRoutedLocation = newAmbulancePos; // Catat lokasi pembaruan terbaru
+                }
             }
 
-            LatLng newPos = new LatLng(lat, lon);
+//            // Ambil arah (bearing) jika ada
+//            if (data.has("bearing")) {
+//                bearing = (float) data.getDouble("bearing");
+//            }
+//
+//            LatLng newPos = new LatLng(lat, lon);
 
             if (ambulanceMarker == null) {
                 // Kalo marker belum ada, buat baru
                 MarkerOptions options = new MarkerOptions()
-                        .position(newPos)
+                        .position(newAmbulancePos)
                         .title("Ambulans")
                         // Pastikan resource gambar ada, jika error ganti ke defaultMarker
                         .icon(getResizedMarkerIcon(R.drawable.ic_ambulance_top_view, 120, 120))
@@ -181,10 +259,10 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
                         .flat(true);
 
                 ambulanceMarker = mMap.addMarker(options);
-                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(newPos, 17));
+                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(newAmbulancePos, 17));
             } else {
                 // Kalo marker sudah ada, ANIMASIKAN gerakannya
-                animateMarker(ambulanceMarker, newPos, bearing);
+                animateMarker(ambulanceMarker, newAmbulancePos, bearing);
             }
 
         } catch (JSONException e) {
@@ -244,5 +322,71 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
         drawable.draw(canvas);
 
         return BitmapDescriptorFactory.fromBitmap(bitmap);
+    }
+
+    // --- LOGIKA RUTE DIRECTIONS API ---
+    private void fetchRoute(LatLng origin, LatLng dest) {
+        executor.execute(() -> {
+            String apiKey = null;
+            try {
+                apiKey = getPackageManager().getApplicationInfo(getPackageName(), PackageManager.GET_META_DATA)
+                        .metaData.getString("com.google.android.geo.API_KEY");
+            } catch (Exception e) { e.printStackTrace(); }
+
+            if (apiKey == null) {
+                Log.e("Navigation", "API Key TIDAK DITEMUKAN di Manifest");
+                return;
+            }
+
+            String url = "https://maps.googleapis.com/maps/api/directions/json?" +
+                    "origin=" + origin.latitude + "," + origin.longitude +
+                    "&destination=" + dest.latitude + "," + dest.longitude +
+                    "&key=" + apiKey;
+
+            Log.d("Navigation", "Mengirim Request ke: " + url); // Cek URL di Logcat
+
+            OkHttpClient client = new OkHttpClient();
+            Request request = new Request.Builder().url(url).build();
+
+            try (Response response = client.newCall(request).execute()) {
+                String jsonResp = response.body().string();
+
+                // --- PENTING: LIHAT INI DI LOGCAT ---
+                Log.d("Navigation", "Response Google: " + jsonResp);
+                // ------------------------------------
+
+                JSONObject json = new JSONObject(jsonResp);
+
+                // Cek Status Jawaban Google
+                String status = json.optString("status");
+                if (!status.equals("OK")) {
+                    Log.e("Navigation", "GAGAL GAMBAR RUTE. Status: " + status);
+                    Log.e("Navigation", "Pesan Error: " + json.optString("error_message"));
+                    return; // Stop di sini
+                }
+
+                JSONArray routes = json.getJSONArray("routes");
+                if (routes.length() > 0) {
+                    String encodedString = routes.getJSONObject(0)
+                            .getJSONObject("overview_polyline")
+                            .getString("points");
+
+                    List<LatLng> path = PolyUtil.decode(encodedString);
+
+                    handler.post(() -> {
+                        mMap.addPolyline(new PolylineOptions()
+                                .addAll(path)
+                                .color(Color.BLUE)
+                                .width(15)); // Pertebal garis jadi 15
+                        Log.d("Tracking", "Garis Berhasil Digambar!");
+                    });
+                } else {
+                    Log.e("Tracking", "Rute Kosong (ZERO_RESULTS)");
+                }
+
+            } catch (Exception e) {
+                Log.e("Tracking", "Error Koneksi/Parsing", e);
+            }
+        });
     }
 }
