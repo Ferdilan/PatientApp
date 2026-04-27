@@ -25,8 +25,8 @@ public class SearchingActivity extends AppCompatActivity {
     private SessionManager session;
 
     private String idPanggilan;
-    private String idPasien;
     private String idDriverDitemukan;
+    private String responseTopic;
 
     private Handler statusHandler = new Handler();
     private int dotCount = 0;
@@ -39,29 +39,22 @@ public class SearchingActivity extends AppCompatActivity {
         setContentView(R.layout.activity_searching);
 
         session = new SessionManager(this);
-
-//        java.util.HashMap<String, String> user = session.getUserDetails();
-
-        tvStatus = findViewById(R.id.tvStatus);
+        tvStatus = findViewById(R.id.tvStatusTitle); // Diperbarui sesuai XML baru
         btnCancel = findViewById(R.id.btnCancel);
 
-        // AMBIL ID DARI INTENT
         if (getIntent() != null) {
             idPanggilan = getIntent().getStringExtra("id_panggilan");
             Log.d("Searching", "Diterima idPanggilan: " + idPanggilan);
         }
 
-//        SessionManager session = new SessionManager(this);
         myId = session.getUserDetails().get(SessionManager.KEY_ID);
-
         mqttManager = MqttClientManager.getInstance();
 
-        // 1. Subscribe ke Topik Respons Pribadi
-        String responseTopic = "panggilan/status/pasien/" + myId;
-
+        responseTopic = "panggilan/status/pasien/" + myId;
         Log.d("Searching", "Menunggu balasan di topik: " + responseTopic);
 
         mqttManager.subscribe(responseTopic, (topic, message) -> {
+            if (isFinishing() || isDestroyed()) return;
             Log.d("Searching", "DAPAT BALASAN: " + message);
             runOnUiThread(() -> handleDriverResponse(message));
         });
@@ -84,7 +77,7 @@ public class SearchingActivity extends AppCompatActivity {
             JSONObject json = new JSONObject(jsonMessage);
             String status = json.optString("status_panggilan", "");
             String ambulansId = json.optString("id_ambulans");
-
+            
             String serverId = json.optString("id_panggilan");
             if (!serverId.isEmpty()) {
                 this.idPanggilan = serverId;
@@ -93,7 +86,6 @@ public class SearchingActivity extends AppCompatActivity {
             this.idDriverDitemukan = ambulansId;
             String latPasien = json.optString("lat_pasien");
             String lonPasien = json.optString("lon_pasien");
-            
 
             if ("menuju_lokasi".equalsIgnoreCase(status)) {
                 isFound = true;
@@ -112,8 +104,8 @@ public class SearchingActivity extends AppCompatActivity {
                     } catch (Exception e) {
                         Log.e("SearchingActivity", "CRASH SAAT PINDAH ACTIVITY: " + e.getMessage(), e);
                     }
-            }, 1000);
-        }
+                }, 1000);
+            }
         } catch (Exception e) {
             Log.e("Searching", "Error parsing JSON: " + jsonMessage);
         }
@@ -128,7 +120,7 @@ public class SearchingActivity extends AppCompatActivity {
                 StringBuilder dots = new StringBuilder();
                 for (int i = 0; i < dotCount; i++) dots.append(".");
 
-                tvStatus.setText("MENCARI AMBULANS" + dots);
+                tvStatus.setText("Mencari Ambulans" + dots);
 
                 dotCount++;
                 if (dotCount > 3) dotCount = 0;
@@ -159,10 +151,8 @@ public class SearchingActivity extends AppCompatActivity {
             payload.put("status", "cancelled");
             payload.put("alasan", "Dibatalkan oleh Pasien");
 
-            String finalJsonPayload = payload.toString();
-            Log.w("CANCEL_ORDER", "PAYLOAD BATAL: \n" + finalJsonPayload);
-
             mqttManager.publish("panggilan/batal/pasien", payload.toString());
+            mqttManager.unsubscribe(responseTopic);
 
             Toast.makeText(this, "Membatalkan pesanan...", Toast.LENGTH_SHORT).show();
             finish();
@@ -174,7 +164,10 @@ public class SearchingActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
+        if (mqttManager != null && responseTopic != null) {
+            mqttManager.unsubscribe(responseTopic);
+        }
         statusHandler.removeCallbacksAndMessages(null);
+        super.onDestroy();
     }
 }

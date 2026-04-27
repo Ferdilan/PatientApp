@@ -1,51 +1,99 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
+    android:background="@drawable/bg_main_gradient"
+    >
+
+    <LinearLayout
+    android:id="@+id/main_content_group"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
     android:gravity="center"
-    android:padding="32dp"
-    android:background="@android:color/white">
+    android:orientation="vertical"
+    android:paddingHorizontal="24dp"
+    app:layout_constraintBottom_toTopOf="@+id/footer_group"
+    app:layout_constraintTop_toTopOf="parent"
+    app:layout_constraintVertical_chainStyle="packed">
 
-    <ImageView
-        android:layout_width="150dp"
-        android:layout_height="150dp"
-        android:src="@drawable/ic_ambulance_top_view"
-        android:layout_marginBottom="24dp"/>
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        app:cardBackgroundColor="#5E17EB"
+        app:cardCornerRadius="28dp"
+        app:cardElevation="8dp"
+        app:strokeWidth="0dp">
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="28dp"
+            android:src="@android:drawable/ic_input_add"
+            app:tint="#FFFFFF"
+            android:contentDescription="Logo PatientApp" />
+    </com.google.android.material.card.MaterialCardView>
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Emergency Patient"
-        android:textSize="28sp"
-        android:textStyle="bold"
-        android:textColor="@android:color/black"
-        android:layout_marginBottom="8dp"/>
+        android:layout_marginTop="24dp"
+        android:text="PatientApp"
+        android:textColor="#1A1A1A"
+        android:textSize="32sp"
+        android:textStyle="bold" />
 
     <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Bantuan medis dalam satu sentuhan"
-        android:textSize="16sp"
-        android:textColor="@android:color/darker_gray"
-        android:layout_marginBottom="64dp"
-        android:gravity="center"/>
-
-    <Button
-        android:id="@+id/btnWelcomeLogin"
         android:layout_width="match_parent"
-        android:layout_height="60dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="12dp"
+        android:gravity="center"
+        android:text="Layanan medis darurat yang cepat, aman, dan terpercaya di ujung jari Anda."
+        android:textColor="#4A4A4A"
+        android:textSize="16sp"
+        android:lineSpacingExtra="4dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnLogin"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:layout_marginTop="48dp"
         android:text="Masuk (Login)"
         android:textSize="16sp"
-        android:layout_marginBottom="16dp"/>
+        android:textStyle="bold"
+        android:backgroundTint="#5E17EB"
+        app:cornerRadius="32dp"
+        app:icon="@android:drawable/ic_media_next"
+        app:iconGravity="textEnd"
+        app:iconTint="#FFFFFF" />
 
-    <Button
-        android:id="@+id/btnWelcomeRegister"
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnRegister"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
         android:layout_width="match_parent"
-        android:layout_height="60dp"
+        android:layout_height="64dp"
+        android:layout_marginTop="16dp"
         android:text="Daftar Akun Baru"
+        android:textColor="#1A1A1A"
         android:textSize="16sp"
-        android:backgroundTint="#FFFFFF"
-        android:textColor="@color/black"/>
+        app:backgroundTint="#1A5E17EB"
+        app:cornerRadius="32dp"
+        app:strokeColor="#4D5E17EB"
+        app:strokeWidth="1dp" />
 
 </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/footer_group"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:paddingBottom="48dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/main_content_group">
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

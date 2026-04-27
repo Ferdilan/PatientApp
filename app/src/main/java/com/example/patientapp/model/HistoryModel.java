@@ -3,16 +3,16 @@ package com.example.patientapp.model;
 import com.google.gson.annotations.SerializedName;
 
 public class HistoryModel {
-    @SerializedName("id")
+    @SerializedName("id_panggilan")
     private int id;
 
     @SerializedName("jenis_layanan")
     private String jenisLayanan;
 
-    @SerializedName("status")
+    @SerializedName("status_panggilan")
     private String status;
 
-    @SerializedName("createdAt")
+    @SerializedName("createdat") // Huruf kecil semua sesuai JSON response
     private String tanggal;
 
     // Relasi ke Ambulans (Nested Object)
@@ -34,7 +34,7 @@ public class HistoryModel {
         @SerializedName("nama_driver")
         private String namaDriver;
 
-        @SerializedName("plat_nomor")
-        private String platNomor;
+        @SerializedName("nomor_polisi")
+        private String nomorPolisi;
     }
 }

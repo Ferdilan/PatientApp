@@ -4,12 +4,8 @@ import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.RadioButton;
-import android.widget.RadioGroup;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -22,6 +18,8 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.example.patientapp.api.AuthResponse;
 import com.example.patientapp.api.RetrofitClient;
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.card.MaterialCardView;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -36,14 +34,14 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class RegisterActivity extends AppCompatActivity {
-    EditText etNik, etNama, etAlamat, etPassword;
-    TextView tvTglLahir;
-    RadioGroup rgJk;
-    ImageView imgKtp;
-    Button btnPilihKtp, btnRegister;
+    private EditText etNik, etNama, etAlamat, etPassword, etDob;
+    private ImageView ivKtpPreview, btnBack;
+    private MaterialCardView cvUploadKtp;
+    private MaterialButton btnMale, btnFemale, btnRegister;
 
     private Uri selectedImageUri;
     private File fileKtp;
+    private String selectedGender = "Laki-laki"; // Default
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,31 +50,46 @@ public class RegisterActivity extends AppCompatActivity {
         setContentView(R.layout.activity_register);
 
         // Init Views
-        etNik = findViewById(R.id.etNikReg);
-        etNama = findViewById(R.id.etNamaReg);
-        etAlamat = findViewById(R.id.etAlamatReg);
-        tvTglLahir = findViewById(R.id.tvTglLahir);
-        rgJk = findViewById(R.id.rgJk);
-        imgKtp = findViewById(R.id.imgKtp);
-        etPassword = findViewById(R.id.etPasswordReg);
-        btnPilihKtp = findViewById(R.id.btnPilihKtp);
-        btnRegister = findViewById(R.id.btnRegister);
+        etNik = findViewById(R.id.etNik);
+        etNama = findViewById(R.id.etFullName);
+        etAlamat = findViewById(R.id.etAddress);
+        etDob = findViewById(R.id.etDob);
+        etPassword = findViewById(R.id.etPassword);
+        ivKtpPreview = findViewById(R.id.ivKtpPreview);
+        cvUploadKtp = findViewById(R.id.cvUploadKtp);
+        btnMale = findViewById(R.id.btnMale);
+        btnFemale = findViewById(R.id.btnFemale);
+        btnRegister = findViewById(R.id.btnCompleteRegistration);
+        btnBack = findViewById(R.id.btnBack);
+
+        btnBack.setOnClickListener(v -> finish());
+
+        // Gender Selection
+        updateGenderUI();   
+        btnMale.setOnClickListener(v -> {
+            selectedGender = "Laki-laki";
+            updateGenderUI();
+        });
+        btnFemale.setOnClickListener(v -> {
+            selectedGender = "Perempuan";
+            updateGenderUI();
+        });
 
         // Date Picker
-        tvTglLahir.setOnClickListener(v -> showDatePicker());
+        etDob.setOnClickListener(v -> showDatePicker());
 
-        // Image Picker (Cara Modern)
+        // Image Picker
         ActivityResultLauncher<String> mGetContent = registerForActivityResult(
                 new ActivityResultContracts.GetContent(),
                 uri -> {
                     if (uri != null) {
                         selectedImageUri = uri;
-                        imgKtp.setImageURI(uri);
+                        ivKtpPreview.setImageURI(uri);
                         fileKtp = getFileFromUri(uri);
                     }
                 });
 
-        btnPilihKtp.setOnClickListener(v -> mGetContent.launch("image/*"));
+        cvUploadKtp.setOnClickListener(v -> mGetContent.launch("image/*"));
 
         // Tombol Register
         btnRegister.setOnClickListener(v -> processRegister());
@@ -88,6 +101,16 @@ public class RegisterActivity extends AppCompatActivity {
         });
     }
 
+    private void updateGenderUI() {
+        if (selectedGender.equals("Laki-laki")) {
+            btnMale.setStrokeWidth(4);
+            btnFemale.setStrokeWidth(1);
+        } else {
+            btnMale.setStrokeWidth(1);
+            btnFemale.setStrokeWidth(4);
+        }
+    }
+
     private void showDatePicker() {
         final Calendar c = Calendar.getInstance();
         int year = c.get(Calendar.YEAR);
@@ -95,25 +118,26 @@ public class RegisterActivity extends AppCompatActivity {
         int day = c.get(Calendar.DAY_OF_MONTH);
 
         new DatePickerDialog(this, (view, year1, month1, dayOfMonth) ->
-                tvTglLahir.setText(year1 + "-" + (month1 + 1) + "-" + dayOfMonth),
+                etDob.setText(year1 + "-" + (month1 + 1) + "-" + dayOfMonth),
                 year, month, day).show();
     }
 
     private void processRegister() {
         String nik = etNik.getText().toString();
         String nama = etNama.getText().toString();
-        String tgl = tvTglLahir.getText().toString();
+        String tgl = etDob.getText().toString();
         String alamat = etAlamat.getText().toString();
         String password = etPassword.getText().toString();
+
+        if (nik.isEmpty() || nama.isEmpty() || tgl.isEmpty() || alamat.isEmpty() || password.isEmpty() || fileKtp == null) {
+            Toast.makeText(this, "Harap lengkapi semua data dan foto KTP", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
         if (password.length() < 6) {
             Toast.makeText(this, "Password minimal 6 karakter", Toast.LENGTH_SHORT).show();
             return;
         }
-
-        // Ambil Radio Button
-        int selectedId = rgJk.getCheckedRadioButtonId();
-        String jk = (selectedId != -1) ? ((RadioButton)findViewById(selectedId)).getText().toString() : "L";
 
         String hashedPassword = hashPassword(password);
 
@@ -122,21 +146,8 @@ public class RegisterActivity extends AppCompatActivity {
         RequestBody rbNama = RequestBody.create(MediaType.parse("text/plain"), nama);
         RequestBody rbTgl = RequestBody.create(MediaType.parse("text/plain"), tgl);
         RequestBody rbAlamat = RequestBody.create(MediaType.parse("text/plain"), alamat);
-        RequestBody rbJk = RequestBody.create(MediaType.parse("text/plain"), jk);
+        RequestBody rbJk = RequestBody.create(MediaType.parse("text/plain"), selectedGender);
         RequestBody rbPass = RequestBody.create(MediaType.parse("text/plain"), hashedPassword);
-
-
-        if (nik.isEmpty() || fileKtp == null) {
-            Toast.makeText(this, "Lengkapi data dan foto KTP", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        if (nik.isEmpty() || password.isEmpty() || password.length() < 6) {
-            Toast.makeText(this, "Data tidak lengkap atau password kurang dari 6 karakter", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-
 
         // Siapkan File Gambar
         RequestBody requestFile = RequestBody.create(MediaType.parse("image/*"), fileKtp);
@@ -145,28 +156,30 @@ public class RegisterActivity extends AppCompatActivity {
         // --- EKSEKUSI API ---
         RetrofitClient.getInstance()
                 .register(rbNik, rbNama, rbTgl, rbJk, rbAlamat, rbPass, bodyFoto)
-                .enqueue(new Callback<com.example.patientapp.api.AuthResponse>() {
+                .enqueue(new Callback<AuthResponse>() {
                     @Override
-                    public void onResponse(Call<com.example.patientapp.api.AuthResponse> call, Response<AuthResponse> response) {
+                    public void onResponse(Call<AuthResponse> call, Response<AuthResponse> response) {
                         if (response.isSuccessful() && response.body() != null) {
                             AuthResponse resp = response.body();
 
-                            if (!response.body().isError()) {
+                            if (!resp.isError()) {
                                 Toast.makeText(RegisterActivity.this, "Registrasi Sukses!", Toast.LENGTH_SHORT).show();
 
-                                // 1. Ambil Data dari Server
-                                String idUser = resp.getData().getId();
-                                String namaUser = resp.getData().getNama();
-
-                                // 2. Simpan Session (Auto Login)
                                 SessionManager sessionManager = new SessionManager(RegisterActivity.this);
-                                sessionManager.createLoginSession(idUser, namaUser, nik, alamat, tgl, jk, resp.getData().getFoto());
+                                sessionManager.createLoginSession(
+                                        resp.getData().getId(),
+                                        resp.getData().getNama(),
+                                        nik,
+                                        alamat,
+                                        tgl,
+                                        selectedGender,
+                                        resp.getData().getFoto()
+                                );
 
-                                // 3. Pindah ke Halaman Utama
                                 Intent intent = new Intent(RegisterActivity.this, MainActivity.class);
                                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
                                 startActivity(intent);
-                                finish(); // Kembali ke Login
+                                finish();
                             } else {
                                 Toast.makeText(RegisterActivity.this, "Gagal: " + resp.getMessage(), Toast.LENGTH_SHORT).show();
                             }
@@ -176,13 +189,12 @@ public class RegisterActivity extends AppCompatActivity {
                     }
 
                     @Override
-                    public void onFailure(Call<com.example.patientapp.api.AuthResponse> call, Throwable t) {
+                    public void onFailure(Call<AuthResponse> call, Throwable t) {
                         Toast.makeText(RegisterActivity.this, "Koneksi Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });
     }
 
-    // --- HELPER: Ubah URI Galeri jadi File Temp ---
     private File getFileFromUri(Uri uri) {
         try {
             File tempFile = File.createTempFile("ktp_upload", ".jpg", getCacheDir());
@@ -204,11 +216,9 @@ public class RegisterActivity extends AppCompatActivity {
 
     private String hashPassword(String password) {
         try {
-            // Menggunakan algoritma SHA-256
             java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
             byte[] hash = digest.digest(password.getBytes("UTF-8"));
             StringBuilder hexString = new StringBuilder();
-
             for (byte b : hash) {
                 String hex = Integer.toHexString(0xff & b);
                 if (hex.length() == 1) hexString.append('0');
@@ -217,7 +227,7 @@ public class RegisterActivity extends AppCompatActivity {
             return hexString.toString();
         } catch (Exception e) {
             e.printStackTrace();
-            return password; // Jika gagal, kembalikan password asli (fallback)
+            return password;
         }
     }
 }

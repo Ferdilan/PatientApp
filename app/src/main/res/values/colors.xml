@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#212121</color>
-    <color name="white">#FFFFFF</color>
+    <color name="primary">#6200EE</color> <!-- Ungu Utama -->
+    <color name="primary_container">#EADDFF</color>
+    <color name="on_primary_container">#21005D</color>
+    <color name="background">#FDF7FF</color>
+    <color name="surface">#FDF7FF</color>
+    <color name="on_surface">#1D1A25</color>
+    <color name="emergency_red">#B00020</color>
+    <color name="outline">#7A7488</color>
 </resources>

@@ -1,71 +1,90 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF"
+    android:background="#F5F0F6"
     android:id="@+id/main"
-    android:padding="32dp">
+    android:padding="24dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:gravity="center"
         android:orientation="vertical"
-        android:layout_centerInParent="true"
-        android:gravity="center">
+        app:layout_constraintBottom_toTopOf="@+id/btnCancel"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="packed">
 
         <FrameLayout
-            android:layout_width="200dp"
-            android:layout_height="200dp"
-            android:layout_marginBottom="32dp">
+            android:layout_width="260dp"
+            android:layout_height="260dp"
+            android:layout_marginBottom="40dp">
 
             <View
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="@drawable/shape_circle_pulse"
-                android:alpha="0.2"/>
+                android:layout_width="260dp"
+                android:layout_height="260dp"
+                android:layout_gravity="center"
+                android:background="@drawable/bg_circle_pulse_light" />
 
-            <ProgressBar
-                android:id="@+id/progressBar"
-                android:layout_width="120dp"
-                android:layout_height="120dp"
-                android:indeterminate="true"
-                android:indeterminateTint="#D32F2F"
-                android:layout_gravity="center"/>
+            <View
+                android:layout_width="190dp"
+                android:layout_height="190dp"
+                android:layout_gravity="center"
+                android:background="@drawable/bg_circle_pulse_medium" />
+
+            <View
+                android:layout_width="110dp"
+                android:layout_height="110dp"
+                android:layout_gravity="center"
+                android:background="@drawable/bg_circle_pulse_core" />
 
             <ImageView
-                android:layout_width="64dp"
-                android:layout_height="64dp"
-                android:src="@mipmap/ic_launcher_round"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
                 android:layout_gravity="center"
-                android:elevation="10dp"/>
+                android:src="@android:drawable/star_on"
+                app:tint="#FFFFFF" />
         </FrameLayout>
 
         <TextView
-            android:id="@+id/tvStatus"
+            android:id="@+id/tvStatusTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="MENCARI AMBULANS..."
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:textColor="#D32F2F"
-            android:layout_marginBottom="8dp"/>
+            android:layout_marginBottom="16dp"
+            android:text="Mencari Ambulans..."
+            android:textColor="#1A1A1A"
+            android:textSize="26sp"
+            android:textStyle="bold" />
 
         <TextView
+            android:id="@+id/tvStatusDesc"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Mohon tetap di halaman ini.\nSistem sedang menghubungi unit terdekat."
-            android:textAlignment="center"
-            android:textColor="#757575"/>
-
-        <Button
-            android:id="@+id/btnCancel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Batalkan Panggilan" />
+            android:layout_marginHorizontal="24dp"
+            android:gravity="center"
+            android:text="Sistem kami sedang mencari unit\ndan paramedis terdekat dengan\nlokasi Anda."
+            android:textColor="#4A4A4A"
+            android:textSize="16sp"
+            android:lineSpacingExtra="6dp" />
 
     </LinearLayout>
 
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnCancel"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:layout_marginBottom="16dp"
+        android:text="Batalkan Panggilan"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:backgroundTint="#B3002D"
+        app:cornerRadius="12dp"
+        app:icon="@android:drawable/ic_menu_close_clear_cancel"
+        app:iconGravity="textStart"
+        app:iconPadding="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
-
-
-</RelativeLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

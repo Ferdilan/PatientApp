@@ -4,10 +4,14 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -33,20 +37,25 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import org.json.JSONObject;
+
+import java.util.HashMap;
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     private static final String TAG = "MainActivity";
 
     private MqttClientManager mqttManager;
-    private TextView statusTextView;
     private Button btnCallAmbulance;
-    private TextView tvAddressDetected;
+    private TextView tvAddressTitle;
+    private TextView tvAddressSubtitle;
     private BottomNavigationView bottomNavigation;
 
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
@@ -54,9 +63,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private FusedLocationProviderClient fusedLocationClient;
     private Location mCurrentLocation;
     private com.google.android.gms.location.LocationCallback locationCallback;
-    private java.util.HashMap<String, com.google.android.gms.maps.model.Marker> ambulanceMarkers = new java.util.HashMap<>();
+    private final HashMap<String, Marker> ambulanceMarkers = new HashMap<>();
 
-    private ActivityResultLauncher<IntentSenderRequest> resolutionForResult =
+    private final ActivityResultLauncher<IntentSenderRequest> resolutionForResult =
             registerForActivityResult(new ActivityResultContracts.StartIntentSenderForResult(), result -> {
                 if (result.getResultCode() == Activity.RESULT_OK) {
                     fetchLiveLocation();
@@ -73,12 +82,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         checkAndRequestLocationSettings();
 
-        androidx.appcompat.widget.Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-
-        btnCallAmbulance = findViewById(R.id.btnCallAmbulance);
-        tvAddressDetected = findViewById(R.id.addressDetecteed);
-        statusTextView = findViewById(R.id.statusTextView);
+        LinearLayout btnCallAmbulance = findViewById(R.id.btnCallAmbulance);
+        tvAddressTitle = findViewById(R.id.tvAddressTitle);
+        tvAddressSubtitle = findViewById(R.id.tvAddressSubtitle);
         bottomNavigation = findViewById(R.id.bottom_navigation);
 
         setupBottomNavigation();
@@ -117,7 +123,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         bottomNavigation.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
             if (id == R.id.nav_home) {
-                return true; // Stay on Home
+                return true;
             } else if (id == R.id.nav_history) {
                 startActivity(new Intent(this, HistoryActivity.class));
                 return true;
@@ -127,8 +133,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
             return false;
         });
-        
-        // Ensure Home is selected by default
         bottomNavigation.setSelectedItemId(R.id.nav_home);
     }
 
@@ -172,9 +176,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     @Override
-    public void onMapReady(GoogleMap googleMap) {
+    public void onMapReady(@NonNull GoogleMap googleMap) {
         mMap = googleMap;
-        mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
         fetchLiveLocation();
     }
 
@@ -192,8 +195,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         locationCallback = new com.google.android.gms.location.LocationCallback() {
             @Override
-            public void onLocationResult(com.google.android.gms.location.LocationResult locationResult) {
-                if (locationResult == null) return;
+            public void onLocationResult(@NonNull com.google.android.gms.location.LocationResult locationResult) {
                 for (Location location : locationResult.getLocations()) {
                     if (location != null) {
                         mCurrentLocation = location;
@@ -215,10 +217,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 android.location.Geocoder geocoder = new android.location.Geocoder(MainActivity.this, new java.util.Locale("id", "ID"));
                 java.util.List<android.location.Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
                 if (addresses != null && !addresses.isEmpty()) {
-                    String teks = addresses.get(0).getThoroughfare();
-                    if (teks == null) teks = addresses.get(0).getAddressLine(0);
-                    final String finalTeks = teks;
-                    runOnUiThread(() -> tvAddressDetected.setText("Alamat Terdeteksi: " + finalTeks));
+                    android.location.Address address = addresses.get(0);
+                    final String title = address.getThoroughfare() != null ? address.getThoroughfare() : address.getLocality();
+                    final String subtitle = address.getAddressLine(0);
+                    runOnUiThread(() -> {
+                        if (tvAddressTitle != null) tvAddressTitle.setText(title);
+                        if (tvAddressSubtitle != null) tvAddressSubtitle.setText(subtitle);
+                    });
                 }
             } catch (Exception e) {
                 Log.e("GEO", "Gagal Geocode", e);
@@ -244,48 +249,23 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         runOnUiThread(() -> {
             if (mMap == null) return;
             LatLng pos = new LatLng(lat, lon);
-
-            com.google.android.gms.maps.model.BitmapDescriptor icon = getResizedIcon(R.drawable.ic_ambulance_top_view, 80, 80);
-
             if (ambulanceMarkers.containsKey(id)) {
-                com.google.android.gms.maps.model.Marker m = ambulanceMarkers.get(id);
+                Marker m = ambulanceMarkers.get(id);
                 if (m != null) {
                     m.setPosition(pos);
                     m.setRotation(bearing);
-                    m.setIcon(icon);
                 }
             } else {
-                com.google.android.gms.maps.model.Marker m = mMap.addMarker(new com.google.android.gms.maps.model.MarkerOptions()
-                        .position(pos)
-                        .title("Ambulans " + id)
-                        .rotation(bearing)
-                        .flat(true)
-                        .anchor(0.5f, 0.5f)
-                        .icon(com.google.android.gms.maps.model.BitmapDescriptorFactory.fromResource(R.drawable.ic_ambulance_top_view)));
-                ambulanceMarkers.put(id, m);
+                Bitmap b = BitmapFactory.decodeResource(getResources(), R.drawable.ic_ambulance_top_view);
+                if (b != null) {
+                    Bitmap smallMarker = Bitmap.createScaledBitmap(b, 80, 80, false);
+                    Marker m = mMap.addMarker(new MarkerOptions()
+                            .position(pos).title("Ambulans " + id).rotation(bearing)
+                            .icon(BitmapDescriptorFactory.fromBitmap(smallMarker)));
+                    ambulanceMarkers.put(id, m);
+                }
             }
         });
-    }
-
-    private com.google.android.gms.maps.model.BitmapDescriptor getResizedIcon(int resourceId, int width, int height) {
-        android.graphics.Bitmap imageBitmap = android.graphics.BitmapFactory.decodeResource(getResources(), resourceId);
-        android.graphics.Bitmap resizedBitmap = android.graphics.Bitmap.createScaledBitmap(imageBitmap, width, height, false);
-        return com.google.android.gms.maps.model.BitmapDescriptorFactory.fromBitmap(resizedBitmap);
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(android.view.Menu menu) {
-        getMenuInflater().inflate(R.menu.main_menu, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(android.view.MenuItem item) {
-        int id = item.getItemId();
-        if (id == R.id.menu_profile) startActivity(new Intent(this, ProfileActivity.class));
-        else if (id == R.id.menu_history) startActivity(new Intent(this, HistoryActivity.class));
-        else if (id == R.id.menu_nearby) startActivity(new Intent(this, NearbyHospitalsActivity.class));
-        return super.onOptionsItemSelected(item);
     }
 
     @Override

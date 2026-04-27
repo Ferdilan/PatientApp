@@ -2,8 +2,8 @@ package com.example.patientapp;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.widget.Button;
 import androidx.appcompat.app.AppCompatActivity;
+import com.google.android.material.button.MaterialButton;
 
 public class WelcomeActivity extends AppCompatActivity {
 
@@ -22,8 +22,8 @@ public class WelcomeActivity extends AppCompatActivity {
         // 2. Jika belum login, tampilkan layar sambutan
         setContentView(R.layout.activity_welcome);
 
-        Button btnLogin = findViewById(R.id.btnWelcomeLogin);
-        Button btnRegister = findViewById(R.id.btnWelcomeRegister);
+        MaterialButton btnLogin = findViewById(R.id.btnLogin);
+        MaterialButton btnRegister = findViewById(R.id.btnRegister);
 
         // Arahkan ke halaman masing-masing
         btnLogin.setOnClickListener(v -> {
@@ -35,7 +35,7 @@ public class WelcomeActivity extends AppCompatActivity {
         });
     }
 
-    private void  goToMain() {
+    private void goToMain() {
         Intent intent = new Intent(this, MainActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(intent);
