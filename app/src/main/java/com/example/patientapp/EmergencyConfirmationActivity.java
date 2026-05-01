@@ -56,7 +56,6 @@ public class EmergencyConfirmationActivity extends AppCompatActivity {
             JSONObject json = new JSONObject();
             json.put("id_panggilan", uniqueId);
             json.put("jenis_layanan", "DARURAT");
-//            json.put("kategori", "CRITICAL"); // Karena user bilang "Iya" pada daftar kritis
             json.put("lokasi_pasien_lat", currentLat);
             json.put("lokasi_pasien_lon", currentLng);
 
@@ -64,9 +63,10 @@ public class EmergencyConfirmationActivity extends AppCompatActivity {
             SessionManager session = new SessionManager(this);
             json.put("id_pasien", session.getUserDetails().get(SessionManager.KEY_ID));
             json.put("nama_pasien", session.getUserDetails().get(SessionManager.KEY_NAMA));
+            json.put("status", "requested");
+            json.put("timestamp", System.currentTimeMillis());
 
             // Publish ke topik umum (Semua driver dengar)
-            // Atau ke backend jika menggunakan sistem dispatching server-side
             mqttManager.publish("panggilan/masuk", json.toString());
 
         } catch (Exception e) {

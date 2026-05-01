@@ -25,7 +25,6 @@ public class SearchingActivity extends AppCompatActivity {
     private SessionManager session;
 
     private String idPanggilan;
-    private String idDriverDitemukan;
     private String responseTopic;
 
     private Handler statusHandler = new Handler();
@@ -39,28 +38,24 @@ public class SearchingActivity extends AppCompatActivity {
         setContentView(R.layout.activity_searching);
 
         session = new SessionManager(this);
-        tvStatus = findViewById(R.id.tvStatusTitle); // Diperbarui sesuai XML baru
+        tvStatus = findViewById(R.id.tvStatusTitle);
         btnCancel = findViewById(R.id.btnCancel);
 
         if (getIntent() != null) {
             idPanggilan = getIntent().getStringExtra("id_panggilan");
-            Log.d("Searching", "Diterima idPanggilan: " + idPanggilan);
         }
 
-        myId = session.getUserDetails().get(SessionManager.KEY_ID);
+        myId = session.getUserId();
         mqttManager = MqttClientManager.getInstance();
 
         responseTopic = "panggilan/status/pasien/" + myId;
-        Log.d("Searching", "Menunggu balasan di topik: " + responseTopic);
 
         mqttManager.subscribe(responseTopic, (topic, message) -> {
             if (isFinishing() || isDestroyed()) return;
-            Log.d("Searching", "DAPAT BALASAN: " + message);
             runOnUiThread(() -> handleDriverResponse(message));
         });
 
         btnCancel.setOnClickListener(v -> batalkanPanggilanDarurat());
-
         startStatusAnimation();
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
@@ -78,33 +73,26 @@ public class SearchingActivity extends AppCompatActivity {
             String status = json.optString("status_panggilan", "");
             String ambulansId = json.optString("id_ambulans");
             
+            // Perbarui idPanggilan jika server mengirimkan ID yang berbeda
             String serverId = json.optString("id_panggilan");
             if (!serverId.isEmpty()) {
                 this.idPanggilan = serverId;
             }
 
-            this.idDriverDitemukan = ambulansId;
-            String latPasien = json.optString("lat_pasien");
-            String lonPasien = json.optString("lon_pasien");
-
             if ("menuju_lokasi".equalsIgnoreCase(status)) {
                 isFound = true;
                 tvStatus.setText("AMBULANS DITEMUKAN!");
 
-                new Handler().postDelayed(() -> {
-                    try {
-                        Intent intent = new Intent(SearchingActivity.this, TrackingActivity.class);
-                        intent.putExtra("id_ambulans", ambulansId);
-                        intent.putExtra("id_panggilan", this.idPanggilan);
-                        intent.putExtra("lat_pasien", latPasien);
-                        intent.putExtra("lon_pasien", lonPasien);
+                Intent intent = new Intent(SearchingActivity.this, TrackingActivity.class);
+                intent.putExtra("id_ambulans", ambulansId);
+                intent.putExtra("id_panggilan", this.idPanggilan); // PENTING: Teruskan ID Panggilan
+                intent.putExtra("nama_driver", json.optString("nama_driver"));
+                intent.putExtra("plat_nomor", json.optString("plat_nomor"));
+                intent.putExtra("lat_pasien", json.optString("lat_pasien"));
+                intent.putExtra("lon_pasien", json.optString("lon_pasien"));
 
-                        startActivity(intent);
-                        finish();
-                    } catch (Exception e) {
-                        Log.e("SearchingActivity", "CRASH SAAT PINDAH ACTIVITY: " + e.getMessage(), e);
-                    }
-                }, 1000);
+                startActivity(intent);
+                finish();
             }
         } catch (Exception e) {
             Log.e("Searching", "Error parsing JSON: " + jsonMessage);
@@ -112,59 +100,36 @@ public class SearchingActivity extends AppCompatActivity {
     }
 
     private void startStatusAnimation() {
-        Runnable statusRunnable = new Runnable() {
+        statusHandler.post(new Runnable() {
             @Override
             public void run() {
                 if (isFound) return;
-
                 StringBuilder dots = new StringBuilder();
                 for (int i = 0; i < dotCount; i++) dots.append(".");
-
                 tvStatus.setText("Mencari Ambulans" + dots);
-
-                dotCount++;
-                if (dotCount > 3) dotCount = 0;
-
+                dotCount = (dotCount + 1) % 4;
                 statusHandler.postDelayed(this, 500);
             }
-        };
-        statusHandler.post(statusRunnable);
+        });
     }
 
     private void batalkanPanggilanDarurat() {
-        Log.d("Searching", "Mencoba batal. idPanggilan saat ini: " + idPanggilan);
-
         if (idPanggilan == null || idPanggilan.isEmpty()) {
-            Toast.makeText(this, "Tidak ada panggilan aktif untuk dibatalkan", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
-
         try {
             JSONObject payload = new JSONObject();
             payload.put("id_panggilan", idPanggilan);
-
-            if (idDriverDitemukan != null) {
-                payload.put("id_ambulans", idDriverDitemukan);
-            }
-
             payload.put("status", "cancelled");
-            payload.put("alasan", "Dibatalkan oleh Pasien");
-
             mqttManager.publish("panggilan/batal/pasien", payload.toString());
-            mqttManager.unsubscribe(responseTopic);
-
-            Toast.makeText(this, "Membatalkan pesanan...", Toast.LENGTH_SHORT).show();
             finish();
-
-        } catch (Exception e) {
-            Log.e("CANCEL_ORDER", "Gagal mengirim sinyal batal", e);
-        }
+        } catch (Exception e) { e.printStackTrace(); }
     }
 
     @Override
     protected void onDestroy() {
-        if (mqttManager != null && responseTopic != null) {
+        if (mqttManager != null && responseTopic != null && !isFound) {
             mqttManager.unsubscribe(responseTopic);
         }
         statusHandler.removeCallbacksAndMessages(null);
