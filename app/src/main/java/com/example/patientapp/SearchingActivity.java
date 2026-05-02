@@ -122,9 +122,21 @@ public class SearchingActivity extends AppCompatActivity {
             JSONObject payload = new JSONObject();
             payload.put("id_panggilan", idPanggilan);
             payload.put("status", "cancelled");
+            
+            // Tambahkan id_pasien sebagai integer agar server bisa memproses pembatalan
+            if (myId != null) {
+                try {
+                    payload.put("id_pasien", Integer.parseInt(myId));
+                } catch (NumberFormatException e) {
+                    payload.put("id_pasien", myId);
+                }
+            }
+
             mqttManager.publish("panggilan/batal/pasien", payload.toString());
             finish();
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (Exception e) { 
+            Log.e("Searching", "Error publishing cancel message: " + e.getMessage());
+        }
     }
 
     @Override
