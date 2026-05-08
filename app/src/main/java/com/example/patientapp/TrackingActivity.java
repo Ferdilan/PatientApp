@@ -32,6 +32,7 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.maps.android.PolyUtil;
 
 import org.json.JSONArray;
@@ -69,6 +70,7 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
     private Handler handler = new Handler();
 
     private TextView tvNamaDriver, tvPlatNomor, tvEstimasi;
+    private FloatingActionButton fabMyLocation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,6 +85,7 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
         tvNamaDriver = findViewById(R.id.tvDriverName);
         tvPlatNomor = findViewById(R.id.tvLicensePlate);
         tvEstimasi = findViewById(R.id.tvEstimasi);
+        fabMyLocation = findViewById(R.id.fabMyLocation);
 
         if (getIntent() != null) {
             idAmbulans = getIntent().getStringExtra("id_ambulans");
@@ -111,12 +114,28 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
         if (mapFragment != null) mapFragment.getMapAsync(this);
 
         mqttManager = MqttClientManager.getInstance();
+
+        fabMyLocation.setOnClickListener(v -> {
+            if (mMap != null && latPasien != 0) {
+                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(latPasien, lonPasien), 17));
+            }
+        });
     }
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-        mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
+        
+        // Mengaktifkan lapisan lalu lintas (traffic layer)
+        mMap.setTrafficEnabled(true);
+        
+        // Mengubah tipe peta ke NORMAL agar indikator lalu lintas lebih jelas terlihat
+        mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
+        
+        // Aktifkan kontrol UI standar
+        mMap.getUiSettings().setZoomControlsEnabled(true);
+        mMap.getUiSettings().setCompassEnabled(true);
+
         updatePatientMarker();
 
         if (latPasien != 0) {

@@ -1,11 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F5F0F6"
-    android:id="@+id/main"
-    android:padding="24dp">
+    android:background="#000000">
+
+    <!-- Peta Beresolusi Tinggi (Hybrid/Satelit) -->
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/mapSearching"
+        android:name="com.google.android.gms.maps.SupportMapFragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- Overlay Gelap agar teks dan animasi tetap terlihat jelas -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#99000000" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -16,34 +29,41 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_chainStyle="packed">
 
+        <!-- Area Animasi Radar -->
         <FrameLayout
-            android:layout_width="260dp"
-            android:layout_height="260dp"
+            android:layout_width="320dp"
+            android:layout_height="320dp"
             android:layout_marginBottom="40dp">
 
             <View
-                android:layout_width="260dp"
-                android:layout_height="260dp"
-                android:layout_gravity="center"
+                android:id="@+id/radarPulse1"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:alpha="0"
                 android:background="@drawable/bg_circle_pulse_light" />
 
             <View
-                android:layout_width="190dp"
-                android:layout_height="190dp"
+                android:id="@+id/radarPulse2"
+                android:layout_width="240dp"
+                android:layout_height="240dp"
                 android:layout_gravity="center"
+                android:alpha="0"
                 android:background="@drawable/bg_circle_pulse_medium" />
 
             <View
-                android:layout_width="110dp"
-                android:layout_height="110dp"
+                android:id="@+id/radarPulse3"
+                android:layout_width="160dp"
+                android:layout_height="160dp"
                 android:layout_gravity="center"
+                android:alpha="0"
                 android:background="@drawable/bg_circle_pulse_core" />
 
+            <!-- Icon Ambulans di tengah radar -->
             <ImageView
-                android:layout_width="48dp"
-                android:layout_height="48dp"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
                 android:layout_gravity="center"
-                android:src="@android:drawable/star_on"
+                android:src="@drawable/ic_ambulance_top_view"
                 app:tint="#FFFFFF" />
         </FrameLayout>
 
@@ -51,40 +71,36 @@
             android:id="@+id/tvStatusTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:text="Mencari Ambulans..."
-            android:textColor="#1A1A1A"
-            android:textSize="26sp"
+            android:layout_marginBottom="12dp"
+            android:text="Mencari Ambulans"
+            android:textColor="#FFFFFF"
+            android:textSize="28sp"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/tvStatusDesc"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="24dp"
+            android:layout_marginHorizontal="40dp"
             android:gravity="center"
-            android:text="Sistem kami sedang mencari unit\ndan paramedis terdekat dengan\nlokasi Anda."
-            android:textColor="#4A4A4A"
-            android:textSize="16sp"
-            android:lineSpacingExtra="6dp" />
+            android:text="Sistem sedang mencarikan armada tercepat\nke lokasi Anda."
+            android:textColor="#CCCCCC"
+            android:textSize="16sp" />
 
     </LinearLayout>
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnCancel"
         android:layout_width="match_parent"
-        android:layout_height="64dp"
-        android:layout_marginBottom="16dp"
-        android:text="Batalkan Panggilan"
-        android:textSize="18sp"
+        android:layout_height="60dp"
+        android:layout_marginHorizontal="32dp"
+        android:layout_marginBottom="32dp"
+        android:text="BATALKAN"
+        android:letterSpacing="0.1"
+        android:textSize="16sp"
         android:textStyle="bold"
-        app:backgroundTint="#B3002D"
-        app:cornerRadius="12dp"
-        app:icon="@android:drawable/ic_menu_close_clear_cancel"
-        app:iconGravity="textStart"
-        app:iconPadding="8dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:backgroundTint="#D32F2F"
+        app:cornerRadius="30dp"
+        app:layout_constraintBottom_toBottomOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

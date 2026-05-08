@@ -50,65 +50,38 @@
             android:paddingHorizontal="24dp"
             android:paddingBottom="32dp">
 
-            <TextView
-                android:id="@+id/tvEstimasi"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Status Pelacakan"
-                android:textColor="#757575"
-                android:textSize="12sp"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
-
-            <TextView
-                android:id="@+id/tvTrackingStatus"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:text="Ambulans sedang menuju lokasi"
-                android:textColor="#F57C00"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tvEstimasi" />
-
-            <View
-                android:id="@+id/divider1"
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginTop="16dp"
-                android:background="#EEEEEE"
-                app:layout_constraintTop_toBottomOf="@id/tvTrackingStatus" />
-
+            <!-- Driver Profile Info at the Top -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cvDriverAvatar"
                 android:layout_width="56dp"
                 android:layout_height="56dp"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="8dp"
                 app:cardCornerRadius="28dp"
                 app:cardElevation="0dp"
                 app:strokeWidth="1dp"
                 app:strokeColor="#EEEEEE"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/divider1">
+                app:layout_constraintTop_toTopOf="parent">
+
                 <ImageView
-                    android:id="@+id/imgDriver"
+                    android:id="@+id/ivDriverAvatar"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
+                    android:src="@drawable/ic_driver_placeholder"
                     android:scaleType="centerCrop"
-                    android:src="@android:drawable/ic_menu_myplaces"
-                    app:tint="#9E9E9E"/>
+                    tools:ignore="ContentDescription" />
             </com.google.android.material.card.MaterialCardView>
 
             <TextView
                 android:id="@+id/tvDriverName"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
                 android:text="Nama Sopir"
                 android:textColor="#1A1A1A"
                 android:textSize="18sp"
                 android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toEndOf="@id/cvDriverAvatar"
                 app:layout_constraintTop_toTopOf="@id/cvDriverAvatar" />
 
@@ -122,69 +95,28 @@
                 app:layout_constraintStart_toStartOf="@id/tvDriverName"
                 app:layout_constraintTop_toBottomOf="@id/tvDriverName" />
 
-            <LinearLayout
+            <View
+                android:id="@+id/divider1"
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="16dp"
+                android:background="#EEEEEE"
+                app:layout_constraintTop_toBottomOf="@id/cvDriverAvatar" />
+
+            <!-- Estimation Info below Driver Profile -->
+            <TextView
+                android:id="@+id/tvEstimasi"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:gravity="end"
-                android:orientation="vertical"
-                app:layout_constraintBottom_toBottomOf="@id/cvDriverAvatar"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="@id/cvDriverAvatar">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Estimasi"
-                    android:textColor="#757575"
-                    android:textSize="12sp" />
-
-                <TextView
-                    android:id="@+id/tvETA"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="5 Mnt"
-                    android:textColor="#2E7D32"
-                    android:textSize="20sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:orientation="horizontal"
-                app:layout_constraintTop_toBottomOf="@id/cvDriverAvatar">
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnCallDriver"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                    android:layout_width="0dp"
-                    android:layout_height="56dp"
-                    android:layout_marginEnd="8dp"
-                    android:layout_weight="1"
-                    android:text="Telepon"
-                    android:textColor="#311B92"
-                    app:cornerRadius="12dp"
-                    app:icon="@android:drawable/ic_menu_call"
-                    app:iconTint="#311B92"
-                    app:strokeColor="#D1C4E9"
-                    app:strokeWidth="1dp" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnCancelTracking"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                    android:layout_width="0dp"
-                    android:layout_height="56dp"
-                    android:layout_marginStart="8dp"
-                    android:layout_weight="1"
-                    android:text="Batalkan"
-                    android:textColor="#D32F2F"
-                    app:cornerRadius="12dp"
-                    app:icon="@android:drawable/ic_menu_close_clear_cancel"
-                    app:iconTint="#D32F2F"
-                    app:strokeColor="#FFCDD2"
-                    app:strokeWidth="1dp" />
-            </LinearLayout>
+                android:layout_marginTop="16dp"
+                android:text="Menghitung estimasi..."
+                android:textColor="#311B92"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:drawablePadding="8dp"
+                app:drawableStartCompat="@android:drawable/ic_menu_recent_history"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/divider1" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </LinearLayout>

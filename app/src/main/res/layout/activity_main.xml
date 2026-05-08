@@ -8,108 +8,14 @@
     android:background="#E8F1F5"
     tools:context=".MainActivity">
 
-    <androidx.fragment.app.FragmentContainerView
-        android:id="@+id/map"
-        android:name="com.google.android.gms.maps.SupportMapFragment"
+    <FrameLayout
+        android:id="@+id/fragment_container"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@+id/bottomContainer"
+        app:layout_constraintBottom_toTopOf="@id/bottom_navigation"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
-
-    <LinearLayout
-        android:id="@+id/bottomContainer"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@drawable/bg_bottom_sheet_rounded"
-        android:orientation="vertical"
-        android:gravity="center_horizontal"
-        android:paddingTop="32dp"
-        android:paddingBottom="40dp"
-        android:paddingHorizontal="24dp"
-        app:layout_constraintBottom_toTopOf="@+id/bottom_navigation"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent">
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginBottom="8dp">
-
-            <ImageView
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:src="@android:drawable/ic_dialog_map"
-                app:tint="#5E17EB" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:letterSpacing="0.05"
-                android:text="ALAMAT TERDETEKSI"
-                android:textColor="#5E17EB"
-                android:textSize="12sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-
-        <TextView
-            android:id="@+id/tvAddressTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Jl. Sudirman No. 45"
-            android:textColor="#1A1A1A"
-            android:textSize="20sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/tvAddressSubtitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:layout_marginBottom="32dp"
-            android:text="Kec. Setiabudi, Jakarta Selatan, 12920"
-            android:textColor="#757575"
-            android:textSize="14sp" />
-
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/btnCallAmbulanceGiant"
-            android:layout_width="180dp"
-            android:layout_height="180dp"
-            app:cardBackgroundColor="#B3002D"
-            app:cardCornerRadius="90dp"
-            app:cardElevation="12dp"
-            app:strokeWidth="0dp">
-
-            <LinearLayout
-                android:id="@+id/btnCallAmbulance"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:gravity="center"
-                android:orientation="vertical">
-
-                <ImageView
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:src="@android:drawable/ic_input_add"
-                    app:tint="#FFFFFF"
-                    android:layout_marginBottom="8dp"/>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="PANGGIL\nAMBULANS"
-                    android:textAlignment="center"
-                    android:textColor="#FFFFFF"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-    </LinearLayout>
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_navigation"
