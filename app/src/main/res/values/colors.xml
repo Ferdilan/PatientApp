@@ -15,4 +15,8 @@
     <color name="on_surface">#1D1A25</color>
     <color name="emergency_red">#B00020</color>
     <color name="outline">#7A7488</color>
+
+    <!-- Missing Default Resources (Added to match values-night) -->
+    <color name="text_color_custom">#333333</color>
+    <color name="bg_card">#FFFFFF</color>
 </resources>
