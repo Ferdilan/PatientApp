@@ -95,6 +95,7 @@ public class SearchingActivity extends AppCompatActivity implements OnMapReadyCa
     public void onMapReady(@NonNull GoogleMap googleMap) {
         mMap = googleMap;
         mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
+        mMap.setTrafficEnabled(true);
         
         // Sembunyikan UI yang tidak perlu di layar pencarian
         mMap.getUiSettings().setAllGesturesEnabled(false);

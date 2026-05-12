@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#E8F1F5">
+    android:background="@color/bg_primary">
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/map"
@@ -41,7 +41,7 @@
                 android:layout_width="16dp"
                 android:layout_height="16dp"
                 android:src="@android:drawable/ic_dialog_map"
-                app:tint="#5E17EB" />
+                app:tint="@color/primary" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -49,7 +49,7 @@
                 android:layout_marginStart="8dp"
                 android:letterSpacing="0.05"
                 android:text="ALAMAT TERDETEKSI"
-                android:textColor="#5E17EB"
+                android:textColor="@color/primary"
                 android:textSize="12sp"
                 android:textStyle="bold" />
         </LinearLayout>
@@ -59,7 +59,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Jl. Sudirman No. 45"
-            android:textColor="#1A1A1A"
+            android:textColor="@color/text_primary"
             android:textSize="20sp"
             android:textStyle="bold" />
 
@@ -70,14 +70,14 @@
             android:layout_marginTop="4dp"
             android:layout_marginBottom="32dp"
             android:text="Kec. Setiabudi, Jakarta Selatan, 12920"
-            android:textColor="#757575"
+            android:textColor="@color/text_secondary"
             android:textSize="14sp" />
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/btnCallAmbulanceGiant"
             android:layout_width="180dp"
             android:layout_height="180dp"
-            app:cardBackgroundColor="#B3002D"
+            app:cardBackgroundColor="@color/emergency_red"
             app:cardCornerRadius="90dp"
             app:cardElevation="12dp"
             app:strokeWidth="0dp">
@@ -93,7 +93,7 @@
                     android:layout_width="48dp"
                     android:layout_height="48dp"
                     android:src="@android:drawable/ic_input_add"
-                    app:tint="#FFFFFF"
+                    app:tint="@android:color/white"
                     android:layout_marginBottom="8dp"/>
 
                 <TextView
@@ -101,7 +101,7 @@
                     android:layout_height="wrap_content"
                     android:text="PANGGIL\nAMBULANS"
                     android:textAlignment="center"
-                    android:textColor="#FFFFFF"
+                    android:textColor="@android:color/white"
                     android:textSize="18sp"
                     android:textStyle="bold" />
             </LinearLayout>

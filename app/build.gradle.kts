@@ -14,9 +14,7 @@ if (localPropertiesFile.exists()) {
 
 android {
     namespace = "com.example.patientapp"
-    compileSdk {
-        version = release(36)
-    }
+    compileSdk = 36
 
     buildFeatures {
         buildConfig = true
@@ -92,11 +90,11 @@ dependencies {
     implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation("com.google.maps.android:android-maps-utils:3.4.0")
     implementation("com.squareup.okhttp3:okhttp:4.10.0")
-    implementation("com.google.maps.android:android-maps-utils:3.4.0")
     implementation("com.google.android.libraries.places:places:3.3.0")
     implementation("com.google.code.gson:gson:2.10.1")
 
     implementation("androidx.annotation:annotation:1.7.1")
+    implementation("androidx.core:core-splashscreen:1.0.1")
 
     // Networking
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
@@ -113,4 +111,3 @@ dependencies {
     androidTestImplementation(libs.espresso.core)
 
 }
-

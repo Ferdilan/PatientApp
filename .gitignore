@@ -1,15 +1,40 @@
+# Gradle files
+.gradle/
+build/
+
+# IntelliJ/Android Studio files
+.idea/
 *.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+*.ipr
+*.iws
+.idea/caches/
+.idea/libraries/
+.idea/modules.xml
+.idea/workspace.xml
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+
+# Local configuration
 local.properties
+
+# Secrets and Signing
+*.jks
+*.keystore
+*.p12
+google-services.json
+
+# Built artifacts
+*.apk
+*.aar
+*.jar
+*.bundle
+
+# Logs and temporary files
+captures/
+.externalNativeBuild/
+.cxx/
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db

@@ -129,8 +129,8 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
         // Mengaktifkan lapisan lalu lintas (traffic layer)
         mMap.setTrafficEnabled(true);
         
-        // Mengubah tipe peta ke NORMAL agar indikator lalu lintas lebih jelas terlihat
-        mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
+        // Mengubah tipe peta ke HYBRID (Citra Satelit dengan Label)
+        mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
         
         // Aktifkan kontrol UI standar
         mMap.getUiSettings().setZoomControlsEnabled(true);

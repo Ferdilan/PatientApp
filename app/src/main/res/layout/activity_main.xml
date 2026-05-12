@@ -5,7 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#E8F1F5"
+    android:background="@color/bg_primary"
     tools:context=".MainActivity">
 
     <FrameLayout
@@ -21,7 +21,7 @@
         android:id="@+id/bottom_navigation"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@android:color/white"
+        android:background="@color/card_bg"
         app:itemIconTint="@color/nav_item_color_state"
         app:itemTextColor="@color/nav_item_color_state"
         app:layout_constraintBottom_toBottomOf="parent"

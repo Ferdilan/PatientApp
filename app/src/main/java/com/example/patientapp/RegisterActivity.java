@@ -6,7 +6,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
@@ -18,6 +17,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.example.patientapp.api.AuthResponse;
 import com.example.patientapp.api.RetrofitClient;
+import com.example.patientapp.utils.ToastHelper;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 
@@ -130,12 +130,12 @@ public class RegisterActivity extends AppCompatActivity {
         String password = etPassword.getText().toString();
 
         if (nik.isEmpty() || nama.isEmpty() || tgl.isEmpty() || alamat.isEmpty() || password.isEmpty() || fileKtp == null) {
-            Toast.makeText(this, "Harap lengkapi semua data dan foto KTP", Toast.LENGTH_SHORT).show();
+            ToastHelper.showToast(this, "Harap lengkapi semua data dan foto KTP");
             return;
         }
 
         if (password.length() < 6) {
-            Toast.makeText(this, "Password minimal 6 karakter", Toast.LENGTH_SHORT).show();
+            ToastHelper.showToast(this, "Password minimal 6 karakter");
             return;
         }
 
@@ -163,7 +163,7 @@ public class RegisterActivity extends AppCompatActivity {
                             AuthResponse resp = response.body();
 
                             if (!resp.isError()) {
-                                Toast.makeText(RegisterActivity.this, "Registrasi Sukses!", Toast.LENGTH_SHORT).show();
+                                ToastHelper.showToast(RegisterActivity.this, "Registrasi Sukses!");
 
                                 SessionManager sessionManager = new SessionManager(RegisterActivity.this);
                                 sessionManager.createLoginSession(
@@ -181,16 +181,16 @@ public class RegisterActivity extends AppCompatActivity {
                                 startActivity(intent);
                                 finish();
                             } else {
-                                Toast.makeText(RegisterActivity.this, "Gagal: " + resp.getMessage(), Toast.LENGTH_SHORT).show();
+                                ToastHelper.showToast(RegisterActivity.this, "Gagal: " + resp.getMessage());
                             }
                         } else {
-                            Toast.makeText(RegisterActivity.this, "Gagal Register", Toast.LENGTH_SHORT).show();
+                            ToastHelper.showToast(RegisterActivity.this, "Gagal Register");
                         }
                     }
 
                     @Override
                     public void onFailure(Call<AuthResponse> call, Throwable t) {
-                        Toast.makeText(RegisterActivity.this, "Koneksi Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                        ToastHelper.showToast(RegisterActivity.this, "Koneksi Error: " + t.getMessage());
                     }
                 });
     }

@@ -3,8 +3,9 @@ package com.example.patientapp;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
-import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.example.patientapp.utils.ToastHelper;
 
 import org.json.JSONObject;
 
@@ -38,7 +39,7 @@ public class EmergencyConfirmationActivity extends AppCompatActivity {
         // JIKA IYA -> Eksekusi Panggilan
         btnYes.setOnClickListener(v -> {
             if (currentLat == 0.0 || currentLng == 0.0) {
-                Toast.makeText(this, "Lokasi tidak valid. Cek GPS Anda.", Toast.LENGTH_SHORT).show();
+                ToastHelper.showToast(this, "Lokasi tidak valid. Cek GPS Anda.");
                 return;
             }
             sendEmergencyRequest();

@@ -7,7 +7,6 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.ProgressBar;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -17,14 +16,10 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.patientapp.adapter.HospitalAdapter;
 import com.example.patientapp.model.HospitalModel;
+import com.example.patientapp.utils.ToastHelper;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.maps.model.LatLng;
 import com.google.android.libraries.places.api.Places;
-import com.google.android.libraries.places.api.model.CircularBounds;
-import com.google.android.libraries.places.api.model.Place;
-import com.google.android.libraries.places.api.model.PlaceLikelihood;
-import com.google.android.libraries.places.api.net.FindCurrentPlaceRequest;
 import com.google.android.libraries.places.api.net.PlacesClient;
 
 import org.json.JSONArray;
@@ -33,7 +28,6 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import okhttp3.Call;
@@ -87,7 +81,7 @@ public class NearbyHospitalsActivity extends AppCompatActivity {
         // Validasi API Key sebelum inisialisasi
         if (apiKey == null || apiKey.isEmpty() || apiKey.equals("${MAPS_API_KEY}")) {
             Log.e(TAG, "API Key tidak ditemukan atau belum terkonfigurasi di local.properties");
-            Toast.makeText(this, "Kesalahan Konfigurasi API Key", Toast.LENGTH_LONG).show();
+            ToastHelper.showToast(this, "Kesalahan Konfigurasi API Key");
         } else {
             if (!Places.isInitialized()) {
                 Places.initialize(getApplicationContext(), apiKey);
@@ -102,7 +96,7 @@ public class NearbyHospitalsActivity extends AppCompatActivity {
 
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             progressBar.setVisibility(View.GONE);
-            Toast.makeText(this, "Izin lokasi diperlukan.", Toast.LENGTH_SHORT).show();
+            ToastHelper.showToast(this, "Izin lokasi diperlukan.");
             return;
         }
 
@@ -110,7 +104,7 @@ public class NearbyHospitalsActivity extends AppCompatActivity {
         fusedClient.getLastLocation().addOnSuccessListener(location -> {
             if (location == null) {
                 progressBar.setVisibility(View.GONE);
-                Toast.makeText(this, "Tidak dapat memperoleh lokasi saat ini.", Toast.LENGTH_SHORT).show();
+                ToastHelper.showToast(this, "Tidak dapat memperoleh lokasi saat ini.");
                 return;
             }
 
@@ -135,7 +129,7 @@ public class NearbyHospitalsActivity extends AppCompatActivity {
                 public void onFailure(@NonNull Call call, @NonNull IOException e) {
                     runOnUiThread(() -> {
                         progressBar.setVisibility(View.GONE);
-                        Toast.makeText(NearbyHospitalsActivity.this, "Network error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        ToastHelper.showToast(NearbyHospitalsActivity.this, "Network error: " + e.getMessage());
                     });
                 }
 
@@ -161,28 +155,28 @@ public class NearbyHospitalsActivity extends AppCompatActivity {
                                 adapter.notifyDataSetChanged();
                                 progressBar.setVisibility(View.GONE);
                                 if (hospitalList.isEmpty()) {
-                                    Toast.makeText(NearbyHospitalsActivity.this, "Tidak ada rumah sakit dalam radius " + (radius/1000) + " km", Toast.LENGTH_LONG).show();
+                                    ToastHelper.showToast(NearbyHospitalsActivity.this, "Tidak ada rumah sakit dalam radius " + (radius/1000) + " km");
                                 } else {
-                                    Toast.makeText(NearbyHospitalsActivity.this, "Ditemukan " + hospitalList.size() + " rumah sakit", Toast.LENGTH_SHORT).show();
+                                    ToastHelper.showToast(NearbyHospitalsActivity.this, "Ditemukan " + hospitalList.size() + " rumah sakit");
                                 }
                             });
                         } catch (JSONException e) {
                             runOnUiThread(() -> {
                                 progressBar.setVisibility(View.GONE);
-                                Toast.makeText(NearbyHospitalsActivity.this, "Gagal parsing data", Toast.LENGTH_SHORT).show();
+                                ToastHelper.showToast(NearbyHospitalsActivity.this, "Gagal parsing data");
                             });
                         }
                     } else {
                         runOnUiThread(() -> {
                             progressBar.setVisibility(View.GONE);
-                            Toast.makeText(NearbyHospitalsActivity.this, "API Error: " + response.code(), Toast.LENGTH_SHORT).show();
+                            ToastHelper.showToast(NearbyHospitalsActivity.this, "API Error: " + response.code());
                         });
                     }
                 }
             });
         }).addOnFailureListener(e -> {
             progressBar.setVisibility(View.GONE);
-            Toast.makeText(this, "Gagal mendapatkan lokasi perangkat: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            ToastHelper.showToast(this, "Gagal mendapatkan lokasi perangkat: " + e.getMessage());
         });
     }
 

@@ -6,12 +6,13 @@ import android.util.Log;
 import android.widget.Button;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+
+import com.example.patientapp.utils.ToastHelper;
 
 import org.json.JSONObject;
 
@@ -54,7 +55,7 @@ public class AmbulanceSelectionActivity extends AppCompatActivity {
 
         // Cek apakah pasien sudah memilih kondisi
         if (selectedId == -1) {
-            Toast.makeText(this, "Silakan pilih kondisi medis terlebih dahulu!", Toast.LENGTH_SHORT).show();
+            ToastHelper.showToast(this, "Silakan pilih kondisi medis terlebih dahulu!");
             return;
         }
 
@@ -89,7 +90,7 @@ public class AmbulanceSelectionActivity extends AppCompatActivity {
         String payloadJson = createPayload(kategoriArmada, jenisLayanan, kondisi, requestId);
 
         if (payloadJson.isEmpty()) {
-            Toast.makeText(this, "Gagal merakit data. Coba lagi.", Toast.LENGTH_SHORT).show();
+            ToastHelper.showToast(this, "Gagal merakit data. Coba lagi.");
             return;
         }
 

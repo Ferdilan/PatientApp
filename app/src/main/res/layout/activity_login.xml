@@ -5,7 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF"
+    android:background="@color/bg_primary"
     android:fillViewport="true"
     tools:context=".LoginActivity">
 
@@ -24,25 +24,27 @@
             android:layout_marginBottom="40dp">
 
             <com.google.android.material.card.MaterialCardView
-                android:layout_width="64dp"
-                android:layout_height="64dp"
-                app:cardBackgroundColor="#F3E5F5"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="0dp">
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                app:cardBackgroundColor="@android:color/white"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="4dp"
+                app:strokeWidth="0dp">
 
                 <ImageView
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:layout_gravity="center"
-                    android:src="@android:drawable/ic_dialog_dialer"
-                    app:tint="#311B92" /> </com.google.android.material.card.MaterialCardView>
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/ic_patientapp"
+                    android:scaleType="centerCrop"
+                    android:contentDescription="Logo PatientApp" />
+            </com.google.android.material.card.MaterialCardView>
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:text="PatientApp"
-                android:textColor="#311B92"
+                android:textColor="@color/primary"
                 android:textSize="22sp"
                 android:textStyle="bold" />
         </LinearLayout>
@@ -51,7 +53,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Selamat Datang Kembali"
-            android:textColor="#1A1A1A"
+            android:textColor="@color/text_primary"
             android:textSize="26sp"
             android:textStyle="bold"
             android:layout_marginBottom="8dp" />
@@ -60,7 +62,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Silakan masuk dengan NIK dan password Anda untuk melanjutkan."
-            android:textColor="#4A4A4A"
+            android:textColor="@color/text_secondary"
             android:textSize="14sp"
             android:lineSpacingExtra="4dp"
             android:layout_marginBottom="32dp" />
@@ -69,7 +71,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Nomor Induk Kependudukan (NIK)"
-            android:textColor="#1A1A1A"
+            android:textColor="@color/text_primary"
             android:textSize="12sp"
             android:layout_marginBottom="8dp"/>
 
@@ -78,8 +80,8 @@
             android:layout_height="wrap_content"
             app:hintEnabled="false"
             app:startIconDrawable="@android:drawable/ic_menu_myplaces"
-            app:startIconTint="#9E9E9E"
-            app:boxBackgroundColor="#FFFFFF"
+            app:startIconTint="@color/text_secondary"
+            app:boxBackgroundColor="@color/card_bg"
             app:boxCornerRadiusTopStart="12dp"
             app:boxCornerRadiusTopEnd="12dp"
             app:boxCornerRadiusBottomStart="12dp"
@@ -106,7 +108,7 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentStart="true"
                 android:text="Password"
-                android:textColor="#1A1A1A"
+                android:textColor="@color/text_primary"
                 android:textSize="12sp" />
 
             <TextView
@@ -115,7 +117,7 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
                 android:text="Lupa Password?"
-                android:textColor="#311B92"
+                android:textColor="@color/primary"
                 android:textSize="12sp"
                 android:textStyle="bold"
                 android:clickable="true"
@@ -127,9 +129,9 @@
             android:layout_height="wrap_content"
             app:hintEnabled="false"
             app:startIconDrawable="@android:drawable/ic_lock_idle_lock"
-            app:startIconTint="#9E9E9E"
+            app:startIconTint="@color/text_secondary"
             app:endIconMode="password_toggle"
-            app:boxBackgroundColor="#FFFFFF"
+            app:boxBackgroundColor="@color/card_bg"
             app:boxCornerRadiusTopStart="12dp"
             app:boxCornerRadiusTopEnd="12dp"
             app:boxCornerRadiusBottomStart="12dp"
@@ -152,7 +154,7 @@
             android:text="Masuk"
             android:textSize="16sp"
             android:textStyle="bold"
-            android:backgroundTint="#311B92"
+            android:backgroundTint="@color/primary"
             app:icon="@android:drawable/ic_media_next"
             app:iconGravity="textEnd"
             app:cornerRadius="32dp"/>
@@ -169,21 +171,21 @@
                 android:layout_width="0dp"
                 android:layout_height="1dp"
                 android:layout_weight="1"
-                android:background="#E0E0E0" />
+                android:background="@color/text_secondary" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="16dp"
                 android:text="Atau"
-                android:textColor="#757575"
+                android:textColor="@color/text_secondary"
                 android:textSize="14sp" />
 
             <View
                 android:layout_width="0dp"
                 android:layout_height="1dp"
                 android:layout_weight="1"
-                android:background="#E0E0E0" />
+                android:background="@color/text_secondary" />
         </LinearLayout>
 
         <LinearLayout
@@ -196,7 +198,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Belum mendaftar di PatientApp?"
-                android:textColor="#4A4A4A"
+                android:textColor="@color/text_secondary"
                 android:textSize="14sp" />
 
             <TextView
@@ -205,7 +207,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:text="Buat Akun Baru"
-                android:textColor="#311B92"
+                android:textColor="@color/primary"
                 android:textSize="14sp"
                 android:textStyle="bold"
                 android:clickable="true"

@@ -5,7 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FAFAFC"
+    android:background="@color/bg_primary"
     tools:context=".AmbulanceSelectionActivity">
 
     <ScrollView
@@ -25,7 +25,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Pilih Kondisi &amp; Layanan"
-                android:textColor="#1A1A1A"
+                android:textColor="@color/text_primary"
                 android:textSize="24sp"
                 android:textStyle="bold" />
 
@@ -34,7 +34,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:text="Silakan pilih kategori ambulans sesuai dengan kondisi pasien saat ini."
-                android:textColor="#4A4A4A"
+                android:textColor="@color/text_secondary"
                 android:textSize="14sp"
                 android:lineSpacingExtra="4dp"
                 android:layout_marginBottom="24dp" />
@@ -43,7 +43,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Informasi Layanan"
-                android:textColor="#1A1A1A"
+                android:textColor="@color/text_primary"
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:layout_marginBottom="16dp" />
@@ -52,10 +52,10 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                app:cardBackgroundColor="#FFF0F0"
+                app:cardBackgroundColor="@color/primary_container"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="0dp"
-                app:strokeColor="#FFCDD2"
+                app:strokeColor="@color/primary"
                 app:strokeWidth="1dp">
 
                 <LinearLayout
@@ -68,9 +68,9 @@
                     <com.google.android.material.card.MaterialCardView
                         android:layout_width="48dp"
                         android:layout_height="48dp"
-                        app:cardBackgroundColor="#FFFFFF"
+                        app:cardBackgroundColor="@color/card_bg"
                         app:cardCornerRadius="8dp"
-                        app:strokeColor="#FFCDD2"
+                        app:strokeColor="@color/primary"
                         app:strokeWidth="1dp"
                         app:cardElevation="0dp">
                         <ImageView
@@ -78,7 +78,7 @@
                             android:layout_height="24dp"
                             android:layout_gravity="center"
                             android:src="@android:drawable/ic_input_add"
-                            app:tint="#D32F2F" />
+                            app:tint="@color/emergency_red" />
                     </com.google.android.material.card.MaterialCardView>
 
                     <LinearLayout
@@ -92,7 +92,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="Call PSC"
-                            android:textColor="#B71C1C"
+                            android:textColor="@color/text_primary"
                             android:textStyle="bold"
                             android:textSize="16sp" />
 
@@ -101,7 +101,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
                             android:text="Layanan ambulans gawat darurat resmi terintegrasi (119)."
-                            android:textColor="#D32F2F"
+                            android:textColor="@color/text_secondary"
                             android:textSize="14sp" />
                     </LinearLayout>
                 </LinearLayout>
@@ -111,10 +111,10 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="32dp"
-                app:cardBackgroundColor="#FFF8E1"
+                app:cardBackgroundColor="@color/card_bg"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="0dp"
-                app:strokeColor="#FFE082"
+                app:strokeColor="@color/outline"
                 app:strokeWidth="1dp">
 
                 <LinearLayout
@@ -127,9 +127,9 @@
                     <com.google.android.material.card.MaterialCardView
                         android:layout_width="48dp"
                         android:layout_height="48dp"
-                        app:cardBackgroundColor="#FFFFFF"
+                        app:cardBackgroundColor="@color/bg_primary"
                         app:cardCornerRadius="8dp"
-                        app:strokeColor="#FFE082"
+                        app:strokeColor="@color/outline"
                         app:strokeWidth="1dp"
                         app:cardElevation="0dp">
                         <ImageView
@@ -137,7 +137,7 @@
                             android:layout_height="24dp"
                             android:layout_gravity="center"
                             android:src="@android:drawable/ic_dialog_info"
-                            app:tint="#F57F17" />
+                            app:tint="@color/primary" />
                     </com.google.android.material.card.MaterialCardView>
 
                     <LinearLayout
@@ -151,7 +151,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="Call Relawan"
-                            android:textColor="#E65100"
+                            android:textColor="@color/text_primary"
                             android:textStyle="bold"
                             android:textSize="16sp" />
 
@@ -160,7 +160,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
                             android:text="Layanan ambulans komunitas relawan terdekat."
-                            android:textColor="#E64A19"
+                            android:textColor="@color/text_secondary"
                             android:textSize="14sp" />
                     </LinearLayout>
                 </LinearLayout>
@@ -170,7 +170,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Kebutuhan Anda"
-                android:textColor="#1A1A1A"
+                android:textColor="@color/text_primary"
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:layout_marginBottom="16dp" />
@@ -184,50 +184,49 @@
                 <RadioButton
                     android:id="@+id/rbAccident"
                     android:layout_width="match_parent"
-                    android:layout_height="56dp"
+                    android:layout_height="wrap_content"
                     android:layout_marginBottom="12dp"
-                    android:paddingHorizontal="16dp"
-                    android:background="@android:drawable/btn_default"
+                    android:padding="16dp"
                     android:text="Kecelakaan (Darurat)"
                     android:textSize="16sp"
-                    android:textColor="#1A1A1A" />
+                    android:textColor="@color/text_primary" />
                 <RadioButton
                     android:id="@+id/rbUnconscious"
                     android:layout_width="match_parent"
-                    android:layout_height="56dp"
+                    android:layout_height="wrap_content"
                     android:layout_marginBottom="12dp"
-                    android:paddingHorizontal="16dp"
-                    android:background="@android:drawable/btn_default"
+                    android:padding="16dp"
                     android:text="Hilang kesadaran (Darurat)"
+                    android:textColor="@color/text_primary"
                     android:textSize="16sp" />
 
                 <RadioButton
                     android:id="@+id/rbLabor"
                     android:layout_width="match_parent"
-                    android:layout_height="56dp"
+                    android:layout_height="wrap_content"
                     android:layout_marginBottom="12dp"
-                    android:paddingHorizontal="16dp"
-                    android:background="@android:drawable/btn_default"
+                    android:padding="16dp"
                     android:text="Melahirkan (Darurat)"
+                    android:textColor="@color/text_primary"
                     android:textSize="16sp" />
 
                 <RadioButton
                     android:id="@+id/rbCheckup"
                     android:layout_width="match_parent"
-                    android:layout_height="56dp"
+                    android:layout_height="wrap_content"
                     android:layout_marginBottom="12dp"
-                    android:paddingHorizontal="16dp"
-                    android:background="@android:drawable/btn_default"
+                    android:padding="16dp"
                     android:text="Periksa (Non-Darurat)"
+                    android:textColor="@color/text_primary"
                     android:textSize="16sp" />
 
                 <RadioButton
                     android:id="@+id/rbHospitalPickup"
                     android:layout_width="match_parent"
-                    android:layout_height="56dp"
-                    android:paddingHorizontal="16dp"
-                    android:background="@android:drawable/btn_default"
+                    android:layout_height="wrap_content"
+                    android:padding="16dp"
                     android:text="Antar/Jemput ke Rumah Sakit (Non-Darurat)"
+                    android:textColor="@color/text_primary"
                     android:textSize="16sp" />
             </RadioGroup>
 
@@ -239,11 +238,13 @@
                 android:text="PANGGIL PSC"
                 android:textSize="18sp"
                 android:textStyle="bold"
-                app:backgroundTint="#D32F2F"
+                android:backgroundTint="@color/emergency_red"
                 app:cornerRadius="32dp"
                 app:icon="@android:drawable/ic_menu_call"
                 app:iconGravity="textStart"
-                app:iconPadding="12dp" />
+                app:iconPadding="12dp"
+                app:iconTint="@android:color/white"
+                android:textColor="@android:color/white" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnPanggilRelawan"
@@ -252,11 +253,13 @@
                 android:text="PANGGIL RELAWAN"
                 android:textSize="18sp"
                 android:textStyle="bold"
-                app:backgroundTint="#F57C00"
+                android:backgroundTint="@color/primary"
                 app:cornerRadius="32dp"
                 app:icon="@android:drawable/ic_menu_myplaces"
                 app:iconGravity="textStart"
-                app:iconPadding="12dp" />
+                app:iconPadding="12dp"
+                app:iconTint="@android:color/white"
+                android:textColor="@android:color/white" />
 
             <Space
                 android:layout_width="match_parent"
@@ -269,7 +272,7 @@
         android:id="@+id/bottom_navigation"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@android:color/white"
+        android:background="@color/card_bg"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

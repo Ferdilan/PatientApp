@@ -5,13 +5,13 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
+import com.example.patientapp.utils.ToastHelper;
 import com.google.android.material.button.MaterialButton;
 
 public class WelcomeActivity extends AppCompatActivity {
@@ -21,7 +21,7 @@ public class WelcomeActivity extends AppCompatActivity {
                 if (isGranted) {
                     // Permission granted
                 } else {
-                    Toast.makeText(this, "Izin notifikasi diperlukan untuk menerima update.", Toast.LENGTH_SHORT).show();
+                    ToastHelper.showToast(this, "Izin notifikasi diperlukan untuk menerima update.");
                 }
             });
 

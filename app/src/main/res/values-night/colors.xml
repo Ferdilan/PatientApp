@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="text_color_custom">#EEEEEE</color> <!-- Putih tulang -->
-    <color name="bg_card">#333333</color> <!-- Abu-abu sangat gelap -->
+    <!-- Standardized UI Colors - Night Mode -->
+    <color name="bg_primary">#121212</color>
+    <color name="text_primary">#E0E0E0</color>
+    <color name="text_secondary">#9E9E9E</color>
+    <color name="card_bg">#1E1E1E</color>
+
+    <!-- Original Colors -->
+    <color name="text_color_custom">#EEEEEE</color>
+    <color name="bg_card">#333333</color>
 </resources>

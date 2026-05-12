@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="primary">#6200EE</color> <!-- Ungu Utama -->
+    <!-- Standardized UI Colors - Light Mode -->
+    <color name="bg_primary">#F5F5F5</color>
+    <color name="text_primary">#212121</color>
+    <color name="text_secondary">#757575</color>
+    <color name="card_bg">#FFFFFF</color>
+
+    <!-- Original Colors -->
+    <color name="primary">#6200EE</color>
     <color name="primary_container">#EADDFF</color>
     <color name="on_primary_container">#21005D</color>
     <color name="background">#FDF7FF</color>

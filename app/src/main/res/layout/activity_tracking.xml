@@ -5,7 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#E8F1F5">
+    android:background="@color/bg_primary">
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/map"
@@ -20,8 +20,8 @@
         android:layout_margin="16dp"
         android:contentDescription="Lokasi Saya"
         android:src="@android:drawable/ic_menu_mylocation"
-        app:backgroundTint="#FFFFFF"
-        app:tint="#311B92"
+        app:backgroundTint="@color/card_bg"
+        app:tint="@color/primary"
         app:layout_anchor="@id/bottomSheet"
         app:layout_anchorGravity="top|end" />
 
@@ -31,6 +31,7 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:background="@drawable/bg_bottom_sheet_rounded"
+        android:backgroundTint="@color/card_bg"
         android:elevation="16dp"
         app:behavior_hideable="false"
         app:behavior_peekHeight="220dp"
@@ -42,7 +43,8 @@
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="12dp"
             android:layout_marginBottom="8dp"
-            android:background="#E0E0E0" />
+            android:background="@color/text_secondary"
+            android:alpha="0.2" />
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
@@ -58,8 +60,9 @@
                 android:layout_marginTop="8dp"
                 app:cardCornerRadius="28dp"
                 app:cardElevation="0dp"
+                app:cardBackgroundColor="@color/bg_primary"
                 app:strokeWidth="1dp"
-                app:strokeColor="#EEEEEE"
+                app:strokeColor="@color/text_secondary"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent">
 
@@ -69,6 +72,7 @@
                     android:layout_height="match_parent"
                     android:src="@drawable/ic_driver_placeholder"
                     android:scaleType="centerCrop"
+                    app:tint="@color/text_secondary"
                     tools:ignore="ContentDescription" />
             </com.google.android.material.card.MaterialCardView>
 
@@ -78,7 +82,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
                 android:text="Nama Sopir"
-                android:textColor="#1A1A1A"
+                android:textColor="@color/text_primary"
                 android:textSize="18sp"
                 android:textStyle="bold"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -90,7 +94,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="B 1234 CD"
-                android:textColor="#757575"
+                android:textColor="@color/text_secondary"
                 android:textSize="14sp"
                 app:layout_constraintStart_toStartOf="@id/tvDriverName"
                 app:layout_constraintTop_toBottomOf="@id/tvDriverName" />
@@ -100,7 +104,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:layout_marginTop="16dp"
-                android:background="#EEEEEE"
+                android:background="@color/text_secondary"
+                android:alpha="0.1"
                 app:layout_constraintTop_toBottomOf="@id/cvDriverAvatar" />
 
             <!-- Estimation Info below Driver Profile -->
@@ -110,11 +115,12 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:text="Menghitung estimasi..."
-                android:textColor="#311B92"
+                android:textColor="@color/primary"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 android:drawablePadding="8dp"
                 app:drawableStartCompat="@android:drawable/ic_menu_recent_history"
+                app:drawableTint="@color/primary"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/divider1" />
 

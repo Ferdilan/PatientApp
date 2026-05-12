@@ -1,7 +1,6 @@
 package com.example.patientapp;
 
 import android.os.Bundle;
-import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -9,6 +8,8 @@ import com.example.patientapp.adapter.HistoryAdapter;
 import com.example.patientapp.api.RetrofitClient;
 import com.example.patientapp.api.ApiService; // Pastikan import ApiService benar
 import com.example.patientapp.model.HistoryModel;
+import com.example.patientapp.utils.ToastHelper;
+
 import java.util.ArrayList;
 import java.util.List;
 import retrofit2.Call;
@@ -51,16 +52,16 @@ public class HistoryActivity extends AppCompatActivity {
                     rvHistory.setAdapter(adapter);
 
                     if (listHistory.isEmpty()) {
-                        Toast.makeText(HistoryActivity.this, "Belum ada riwayat panggilan.", Toast.LENGTH_SHORT).show();
+                        ToastHelper.showToast(HistoryActivity.this, "Belum ada riwayat panggilan.");
                     }
                 } else {
-                    Toast.makeText(HistoryActivity.this, "Gagal memuat data.", Toast.LENGTH_SHORT).show();
+                    ToastHelper.showToast(HistoryActivity.this, "Gagal memuat data.");
                 }
             }
 
             @Override
             public void onFailure(Call<ApiService.HistoryResponse> call, Throwable t) {
-                Toast.makeText(HistoryActivity.this, "Koneksi Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                ToastHelper.showToast(HistoryActivity.this, "Koneksi Error: " + t.getMessage());
             }
         });
     }

@@ -14,7 +14,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.IntentSenderRequest;
@@ -24,6 +23,7 @@ import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 
+import com.example.patientapp.utils.ToastHelper;
 import com.google.android.gms.common.api.ResolvableApiException;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationRequest;
@@ -65,7 +65,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                     fetchLiveLocation();
                 } else {
                     if (getContext() != null) {
-                        Toast.makeText(getContext(), "Aplikasi membutuhkan GPS aktif!", Toast.LENGTH_SHORT).show();
+                        ToastHelper.showToast(getContext(), "Aplikasi membutuhkan GPS aktif!");
                     }
                 }
             });
@@ -97,7 +97,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                 intent.putExtra("LONGITUDE", mCurrentLocation.getLongitude());
                 startActivity(intent);
             } else {
-                Toast.makeText(getContext(), "Mencari lokasi Anda...", Toast.LENGTH_SHORT).show();
+                ToastHelper.showToast(getContext(), "Mencari lokasi Anda...");
                 fetchLiveLocation();
             }
         });
@@ -133,7 +133,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
             public void onSuccess() {
                 if (isAdded()) {
                     requireActivity().runOnUiThread(() -> {
-                        Toast.makeText(getContext(), "Server Terhubung", Toast.LENGTH_SHORT).show();
+                        ToastHelper.showToast(getContext(), "Server Terhubung");
                         dengarkanSemuaAmbulans();
                     });
                 }
@@ -149,6 +149,8 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
     @Override
     public void onMapReady(@NonNull GoogleMap googleMap) {
         mMap = googleMap;
+        mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
+        mMap.setTrafficEnabled(true);
         fetchLiveLocation();
     }
 

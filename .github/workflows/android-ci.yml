@@ -1,0 +1,89 @@
+name: Android CI
+
+on:
+  push:
+    branches: [ "main", "master", "development" ]
+  pull_request:
+    branches: [ "main", "master", "development" ]
+
+jobs:
+  validate-wrapper:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Gradle Wrapper
+        uses: gradle/wrapper-validation-action@v3
+
+  build:
+    name: Build and Test
+    needs: validate-wrapper
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Grant Execute Permission for Gradlew
+        run: chmod +x gradlew
+
+      # Create dummy local.properties to prevent build failure if missing
+      - name: Create local.properties
+        run: |
+          touch local.properties
+          echo "MAPS_API_KEY=${{ secrets.MAPS_API_KEY }}" >> local.properties
+          echo "MQTT_HOST=${{ secrets.MQTT_HOST }}" >> local.properties
+          echo "MQTT_USERNAME=${{ secrets.MQTT_USERNAME }}" >> local.properties
+          echo "MQTT_PASSWORD=${{ secrets.MQTT_PASSWORD }}" >> local.properties
+          echo "API_URL=${{ secrets.API_URL }}" >> local.properties
+
+      - name: Dependency Resolution & Cache
+        run: ./gradlew dependencies --stacktrace
+
+      - name: Run Lint Analysis
+        run: ./gradlew lint
+
+      - name: Run Unit Tests
+        run: ./gradlew test
+
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug
+
+      - name: Upload Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: PatientApp-Debug-APK
+          path: app/build/outputs/apk/debug/*.apk
+
+      # Optional: Build Release APK if secrets are available
+      - name: Build Release APK
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        env:
+          BASE64_KEYSTORE: ${{ secrets.BASE64_KEYSTORE }}
+          KEYSTORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          if [ ! -z "$BASE64_KEYSTORE" ]; then
+            echo "$BASE64_KEYSTORE" | base64 --decode > app/release.jks
+            ./gradlew assembleRelease \
+              -Pandroid.injected.signing.store.file=$(pwd)/app/release.jks \
+              -Pandroid.injected.signing.store.password=$KEYSTORE_PASSWORD \
+              -Pandroid.injected.signing.key.alias=$KEY_ALIAS \
+              -Pandroid.injected.signing.key.password=$KEY_PASSWORD
+          else
+            echo "Skipping Release Build: Keystore secret not found."
+          fi
+
+      - name: Upload Release Artifact
+        if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') && success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: PatientApp-Release-APK
+          path: app/build/outputs/apk/release/*.apk

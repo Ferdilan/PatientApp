@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#FAFAFA"
+    android:background="@color/bg_primary"
     android:padding="24dp">
 
     <LinearLayout
@@ -20,7 +20,7 @@
             android:text="KONFIRMASI PANGGILAN DARURAT"
             android:textSize="22sp"
             android:textStyle="bold"
-            android:textColor="#D32F2F"
+            android:textColor="@color/emergency_red"
             android:layout_marginStart="16dp"/>
     </LinearLayout>
 
@@ -29,14 +29,15 @@
         android:layout_height="wrap_content"
         android:text="Apakah kebutuhan Anda atau Pasien termasuk salah satu dari kategori berikut?"
         android:textSize="18sp"
-        android:textColor="#212121"
+        android:textColor="@color/text_primary"
         android:layout_marginBottom="16dp"/>
 
-    <androidx.cardview.widget.CardView
+    <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:cardCornerRadius="12dp"
         app:cardElevation="2dp"
+        app:cardBackgroundColor="@color/card_bg"
         app:contentPadding="20dp">
 
         <LinearLayout
@@ -47,7 +48,7 @@
             <TextView
                 android:text="• Henti Jantung / Nyeri Dada Hebat"
                 android:textSize="16sp"
-                android:textColor="#000000"
+                android:textColor="@color/text_primary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:paddingBottom="12dp"/>
@@ -55,7 +56,7 @@
             <TextView
                 android:text="• Kecelakaan Lalu Lintas Parah"
                 android:textSize="16sp"
-                android:textColor="#000000"
+                android:textColor="@color/text_primary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:paddingBottom="12dp"/>
@@ -63,7 +64,7 @@
             <TextView
                 android:text="• Sesak Napas Berat / Tersedak"
                 android:textSize="16sp"
-                android:textColor="#000000"
+                android:textColor="@color/text_primary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:paddingBottom="12dp"/>
@@ -71,7 +72,7 @@
             <TextView
                 android:text="• Pendarahan Hebat yang Tidak Berhenti"
                 android:textSize="16sp"
-                android:textColor="#000000"
+                android:textColor="@color/text_primary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:paddingBottom="12dp"/>
@@ -79,16 +80,14 @@
             <TextView
                 android:text="• Hilang Kesadaran / Pingsan"
                 android:textSize="16sp"
-                android:textColor="#000000"
+                android:textColor="@color/text_primary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"/>
 
         </LinearLayout>
-    </androidx.cardview.widget.CardView>
+    </com.google.android.material.card.MaterialCardView>
 
     <View android:layout_width="0dp" android:layout_height="0dp" android:layout_weight="1"/>
-
-
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -102,7 +101,7 @@
             android:text="IYA, PANGGIL AMBULANS"
             android:textSize="16sp"
             android:textStyle="bold"
-            android:backgroundTint="#D32F2F"
+            android:backgroundTint="@color/emergency_red"
             app:cornerRadius="8dp"/>
 
         <com.google.android.material.button.MaterialButton
@@ -111,8 +110,8 @@
             android:layout_height="60dp"
             android:layout_marginTop="12dp"
             android:text="TIDAK / BATALKAN"
-            android:textColor="#616161"
-            android:backgroundTint="#E0E0E0"
+            android:textColor="@color/text_secondary"
+            android:backgroundTint="@color/outline"
             app:cornerRadius="8dp"/>
 
     </LinearLayout>

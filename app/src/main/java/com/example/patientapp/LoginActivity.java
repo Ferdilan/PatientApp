@@ -5,7 +5,6 @@ import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -15,6 +14,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.example.patientapp.api.AuthResponse;
 import com.example.patientapp.api.RetrofitClient;
+import com.example.patientapp.utils.ToastHelper;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -31,14 +31,6 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_login);
-
-        // 1. Cek Sesi Dulu
-//        session = new SessionManager(getApplicationContext());
-//        if (session.isLoggedIn()) {
-//            startActivity(new Intent(this, MainActivity.class));
-//            finish();
-//            return;
-//        }
 
         etNik = findViewById(R.id.etNik);
         etPassword = findViewById(R.id.etPassword);
@@ -78,7 +70,7 @@ public class LoginActivity extends AppCompatActivity {
         String pass = etPassword.getText().toString();
 
         if (nik.isEmpty() || pass.isEmpty()) {
-            Toast.makeText(this, "Data tidak boleh kosong", Toast.LENGTH_SHORT).show();
+            ToastHelper.showToast(this, "Data tidak boleh kosong");
             return;
         }
 
@@ -91,7 +83,7 @@ public class LoginActivity extends AppCompatActivity {
                     AuthResponse resp = response.body();
 
                     if (!resp.isError()) {
-                        Toast.makeText(LoginActivity.this, "Login Berhasil", Toast.LENGTH_SHORT).show();
+                        ToastHelper.showToast(LoginActivity.this, "Login Berhasil");
 
                         // Simpan Sesi
                         SessionManager session = new SessionManager(LoginActivity.this);
@@ -110,16 +102,16 @@ public class LoginActivity extends AppCompatActivity {
                         startActivity(intent);
                         finish();
                     } else {
-                        Toast.makeText(LoginActivity.this, "Gagal: " + resp.getMessage(), Toast.LENGTH_SHORT).show();
+                        ToastHelper.showToast(LoginActivity.this, "Gagal: " + resp.getMessage());
                     }
                 } else {
-                    Toast.makeText(LoginActivity.this, "Gagal Terhubung ke Server: ", Toast.LENGTH_SHORT).show();
+                    ToastHelper.showToast(LoginActivity.this, "Gagal Terhubung ke Server: ");
                 }
             }
 
             @Override
             public void onFailure(Call<AuthResponse> call, Throwable t) {
-                Toast.makeText(LoginActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                ToastHelper.showToast(LoginActivity.this, "Error: " + t.getMessage());
             }
         });
     }
