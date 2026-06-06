@@ -20,9 +20,6 @@
         android:theme="@style/Theme.PatientApp"
         android:usesCleartextTraffic="true">
         <activity
-            android:name=".NearbyHospitalsActivity"
-            android:exported="false" />
-        <activity
             android:name=".HistoryActivity"
             android:exported="false" />
         <activity
