@@ -5,25 +5,25 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Point;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.SystemClock;
 import android.util.Log;
-import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
 import android.widget.TextView;
-import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
+import com.example.patientapp.api.ApiService;
+import com.example.patientapp.api.RetrofitClient;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
@@ -35,7 +35,6 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.maps.android.PolyUtil;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -46,6 +45,9 @@ import java.util.concurrent.Executors;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
+import retrofit2.Call;
+import retrofit2.Callback;
 
 public class TrackingActivity extends AppCompatActivity implements OnMapReadyCallback {
 
@@ -64,36 +66,36 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
     private double lonPasien;
     private LatLng lastRoutedLocation = null;
 
-    private SessionManager session;
     private String myPatientId;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
-    private Handler handler = new Handler();
+    private final Handler handler = new Handler(Looper.getMainLooper());
 
     private TextView tvNamaDriver, tvPlatNomor, tvEstimasi;
-    private FloatingActionButton fabMyLocation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tracking);
 
-        session = new SessionManager(this);
+        SessionManager session = new SessionManager(this);
         myPatientId = session.getUserId();
         
-        Log.d(TAG, "Tracking UI started. Patient ID: " + myPatientId);
-
         tvNamaDriver = findViewById(R.id.tvDriverName);
         tvPlatNomor = findViewById(R.id.tvLicensePlate);
         tvEstimasi = findViewById(R.id.tvEstimasi);
-        fabMyLocation = findViewById(R.id.fabMyLocation);
+        FloatingActionButton fabMyLocation = findViewById(R.id.fabMyLocation);
 
         if (getIntent() != null) {
             idAmbulans = getIntent().getStringExtra("id_ambulans");
             idPanggilan = getIntent().getStringExtra("id_panggilan");
+            
             namaDriver = getIntent().getStringExtra("nama_driver");
             platNomor = getIntent().getStringExtra("plat_nomor");
 
-            if (namaDriver == null) namaDriver = "Driver Ambulans";
+            Log.d(TAG, "Data Intent: idAmb=" + idAmbulans + ", idCall=" + idPanggilan + ", name=" + namaDriver + ", plat=" + platNomor);
+
+            if (namaDriver == null || namaDriver.isEmpty()) namaDriver = "Memuat nama...";
+            if (platNomor == null || platNomor.isEmpty()) platNomor = "Loading...";
 
             try {
                 String latS = getIntent().getStringExtra("lat_pasien");
@@ -107,8 +109,12 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
         }
 
         tvNamaDriver.setText(namaDriver);
-        tvPlatNomor.setText(platNomor != null ? platNomor : "---");
+        tvPlatNomor.setText(platNomor);
         tvEstimasi.setText("Menghitung estimasi...");
+
+        if (idAmbulans != null && !idAmbulans.isEmpty()) {
+            fetchAmbulanceDetails(idAmbulans);
+        }
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         if (mapFragment != null) mapFragment.getMapAsync(this);
@@ -122,26 +128,72 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
         });
     }
 
+    private void fetchAmbulanceDetails(String id) {
+        RetrofitClient.getInstance().getAmbulansDetail(id).enqueue(new Callback<ApiService.AmbulansResponse>() {
+            @Override
+            public void onResponse(@NonNull Call<ApiService.AmbulansResponse> call, @NonNull retrofit2.Response<ApiService.AmbulansResponse> response) {
+                if (response.isSuccessful() && response.body() != null && !response.body().error) {
+                    ApiService.AmbulansData data = response.body().data;
+                    if (data != null) {
+                        Log.d(TAG, "API Detail Sukses: " + data.namaDriver + " - " + (data.nomorPolisi != null ? data.nomorPolisi : data.noPolisi));
+                        namaDriver = data.namaDriver;
+                        platNomor = data.nomorPolisi != null ? data.nomorPolisi : data.noPolisi;
+                        runOnUiThread(() -> {
+                            tvNamaDriver.setText(namaDriver);
+                            tvPlatNomor.setText(platNomor);
+                        });
+                    }
+                } else {
+                    Log.e(TAG, "API Detail Gagal. Code: " + response.code());
+                }
+            }
+            @Override
+            public void onFailure(@NonNull Call<ApiService.AmbulansResponse> call, @NonNull Throwable t) {
+                Log.e(TAG, "API Detail Failure (Cek apakah server mengembalikan JSON valid): " + t.getMessage());
+            }
+        });
+    }
+
+    private void updateDriverInfoIfMissing(JSONObject data) {
+        try {
+            String name = data.optString("nama_driver", "");
+            if (name.isEmpty()) name = data.optString("nama", "");
+            
+            String plate = data.optString("nomor_polisi", "");
+            if (plate.isEmpty()) plate = data.optString("plat_nomor", "");
+            if (plate.isEmpty()) plate = data.optString("no_polisi", "");
+
+            boolean isUpdated = false;
+            if (!name.isEmpty() && (namaDriver == null || namaDriver.contains("Memuat"))) {
+                namaDriver = name;
+                isUpdated = true;
+            }
+            if (!plate.isEmpty() && (platNomor == null || platNomor.contains("Loading") || platNomor.equals("..."))) {
+                platNomor = plate;
+                isUpdated = true;
+            }
+
+            if (isUpdated) {
+                Log.d(TAG, "Profil diperbarui dari MQTT: " + namaDriver + " (" + platNomor + ")");
+                runOnUiThread(() -> {
+                    tvNamaDriver.setText(namaDriver);
+                    tvPlatNomor.setText(platNomor);
+                });
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Gagal update info dari JSON: " + e.getMessage());
+        }
+    }
+
     @Override
-    public void onMapReady(GoogleMap googleMap) {
+    public void onMapReady(@NonNull GoogleMap googleMap) {
         mMap = googleMap;
-        
-        // Mengaktifkan lapisan lalu lintas (traffic layer)
         mMap.setTrafficEnabled(true);
-        
-        // Mengubah tipe peta ke HYBRID (Citra Satelit dengan Label)
         mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
-        
-        // Aktifkan kontrol UI standar
-        mMap.getUiSettings().setZoomControlsEnabled(true);
-        mMap.getUiSettings().setCompassEnabled(true);
-
         updatePatientMarker();
-
         if (latPasien != 0) {
             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(latPasien, lonPasien), 15));
         }
-
         connectAndSubscribe();
     }
 
@@ -149,10 +201,7 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
         if (mMap == null || latPasien == 0) return;
         LatLng pos = new LatLng(latPasien, lonPasien);
         if (patientMarker == null) {
-            patientMarker = mMap.addMarker(new MarkerOptions()
-                    .position(pos)
-                    .title("Lokasi Saya")
-                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)));
+            patientMarker = mMap.addMarker(new MarkerOptions().position(pos).title("Lokasi Saya").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)));
         } else {
             patientMarker.setPosition(pos);
         }
@@ -172,94 +221,33 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
     }
 
     private void subscribeTopics() {
-        // 1. Subscribe Lokasi Ambulans
         if (idAmbulans != null) {
-            String locTopic = "ambulans/lokasi/update/" + idAmbulans;
-            mqttManager.subscribe(locTopic, (topic, msg) -> runOnUiThread(() -> processLocationUpdate(msg)));
+            mqttManager.subscribe("ambulans/lokasi/update/" + idAmbulans, (topic, msg) -> runOnUiThread(() -> processLocationUpdate(msg)));
         }
-        
-        // 2. Subscribe Status via ID Pasien
         if (myPatientId != null) {
-            String statusTopic = "panggilan/status/pasien/" + myPatientId;
-            Log.d(TAG, "Subscribing to Status Topic: " + statusTopic);
-            mqttManager.subscribe(statusTopic, (topic, msg) -> {
-                Log.d(TAG, "STATUS MESSAGE RECEIVED: " + msg);
-                runOnUiThread(() -> processStatusUpdate(msg));
-            });
+            mqttManager.subscribe("panggilan/status/pasien/" + myPatientId, (topic, msg) -> runOnUiThread(() -> processStatusUpdate(msg)));
         }
-
-        // 3. Subscribe Status via ID Panggilan
         if (idPanggilan != null) {
-            String callTopic = "panggilan/status/update/" + idPanggilan;
-            Log.d(TAG, "Subscribing to Call Status Topic: " + callTopic);
-            mqttManager.subscribe(callTopic, (topic, msg) -> {
-                Log.d(TAG, "CALL STATUS RECEIVED: " + msg);
-                runOnUiThread(() -> processStatusUpdate(msg));
-            });
+            mqttManager.subscribe("panggilan/status/update/" + idPanggilan, (topic, msg) -> runOnUiThread(() -> processStatusUpdate(msg)));
         }
     }
 
     private void processStatusUpdate(String message) {
-        String status = "";
+        Log.d(TAG, "Status Update Recv: " + message);
         try {
             if (message.trim().startsWith("{")) {
                 JSONObject data = new JSONObject(message);
-                status = data.optString("status_panggilan", "");
-                if (status.isEmpty()) status = data.optString("status", "");
-                if (status.isEmpty()) status = data.optString("panggilan_status", "");
-            } else {
-                status = message.trim();
+                updateDriverInfoIfMissing(data);
+                String status = data.optString("status_panggilan", data.optString("status", ""));
+                if (status.equalsIgnoreCase("selesai") || status.equalsIgnoreCase("arrived")) showCompletionDialog();
             }
-        } catch (JSONException e) {
-            status = message.trim();
-        }
-
-        Log.d(TAG, "Evaluated Status: [" + status + "]");
-
-        if (status.equalsIgnoreCase("selesai") || 
-            status.equalsIgnoreCase("completed") || 
-            status.equalsIgnoreCase("finished") || 
-            status.equalsIgnoreCase("arrived")) {
-            
-            showCompletionDialog();
-        }
-    }
-
-    private void showCompletionDialog() {
-        if (isFinishing() || isDestroyed()) return;
-
-        Log.i(TAG, "Displaying Completion Dialog");
-        
-        // Hentikan langganan agar tidak memakan baterai/data
-        if (mqttManager != null) {
-            mqttManager.unsubscribe("ambulans/lokasi/update/" + idAmbulans);
-            if (myPatientId != null) mqttManager.unsubscribe("panggilan/status/pasien/" + myPatientId);
-            if (idPanggilan != null) mqttManager.unsubscribe("panggilan/status/update/" + idPanggilan);
-        }
-
-        new AlertDialog.Builder(this)
-                .setTitle("Layanan Selesai")
-                .setMessage("Driver telah menyelesaikan panggilan ini. Semoga Anda sehat selalu.")
-                .setCancelable(false)
-                .setPositiveButton("Kembali ke Beranda", (d, w) -> {
-                    Intent i = new Intent(TrackingActivity.this, MainActivity.class);
-                    i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-                    startActivity(i);
-                    finish();
-                })
-                .show();
+        } catch (JSONException e) { Log.e(TAG, "Status Parse Error", e); }
     }
 
     private void processLocationUpdate(String jsonString) {
         try {
             JSONObject data = new JSONObject(jsonString);
-            
-            // Cek jika status selesai terselip di pesan lokasi
-            String embeddedStatus = data.optString("status", "");
-            if (embeddedStatus.equalsIgnoreCase("selesai") || embeddedStatus.equalsIgnoreCase("arrived")) {
-                showCompletionDialog();
-                return;
-            }
+            updateDriverInfoIfMissing(data);
 
             double lat = data.optDouble("lokasi_latitude", 0);
             double lon = data.optDouble("lokasi_longitude", 0);
@@ -268,6 +256,11 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
             float bearing = (float) data.optDouble("bearing", 0);
             LatLng ambPos = new LatLng(lat, lon);
             LatLng pasPos = new LatLng(latPasien, lonPasien);
+
+            if (patientMarker != null && getDistance(ambPos, pasPos) < 20) {
+                patientMarker.remove();
+                patientMarker = null;
+            }
 
             if (lastRoutedLocation == null || getDistance(lastRoutedLocation, ambPos) > 300) {
                 fetchRoute(ambPos, pasPos);
@@ -283,6 +276,18 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
         } catch (Exception e) { Log.e(TAG, "Loc Error", e); }
     }
 
+    private void showCompletionDialog() {
+        if (isFinishing() || isDestroyed()) return;
+        new AlertDialog.Builder(this)
+                .setTitle("Layanan Selesai")
+                .setMessage("Driver telah mencapai lokasi atau menyelesaikan panggilan.")
+                .setCancelable(false)
+                .setPositiveButton("OK", (d, w) -> {
+                    startActivity(new Intent(this, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
+                    finish();
+                }).show();
+    }
+
     private double getDistance(LatLng p1, LatLng p2) {
         float[] res = new float[1];
         android.location.Location.distanceBetween(p1.latitude, p1.longitude, p2.latitude, p2.longitude, res);
@@ -292,16 +297,12 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
     private void animateMarker(Marker marker, LatLng toPos, float rotation) {
         long start = SystemClock.uptimeMillis();
         LatLng startPos = marker.getPosition();
-        long duration = 1000;
-        Interpolator interp = new LinearInterpolator();
         handler.post(new Runnable() {
             @Override
             public void run() {
                 long elapsed = SystemClock.uptimeMillis() - start;
-                float t = interp.getInterpolation((float) elapsed / duration);
-                double lat = t * toPos.latitude + (1 - t) * startPos.latitude;
-                double lng = t * toPos.longitude + (1 - t) * startPos.longitude;
-                marker.setPosition(new LatLng(lat, lng));
+                float t = new LinearInterpolator().getInterpolation((float) elapsed / 1000);
+                marker.setPosition(new LatLng(t * toPos.latitude + (1 - t) * startPos.latitude, t * toPos.longitude + (1 - t) * startPos.longitude));
                 marker.setRotation(rotation);
                 if (t < 1.0) handler.postDelayed(this, 16);
             }
@@ -310,33 +311,36 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
 
     private BitmapDescriptor getResizedMarkerIcon(int resId, int w, int h) {
         Drawable d = ContextCompat.getDrawable(this, resId);
-        if (d == null) return null;
         Bitmap b = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
         Canvas c = new Canvas(b);
-        d.setBounds(0, 0, w, h);
-        d.draw(c);
+        if (d != null) {
+            d.setBounds(0, 0, w, h);
+            d.draw(c);
+        }
         return BitmapDescriptorFactory.fromBitmap(b);
     }
 
     private void fetchRoute(LatLng origin, LatLng dest) {
-        if (dest.latitude == 0) return;
         executor.execute(() -> {
             try {
                 String key = getPackageManager().getApplicationInfo(getPackageName(), PackageManager.GET_META_DATA).metaData.getString("com.google.android.geo.API_KEY");
                 String url = "https://maps.googleapis.com/maps/api/directions/json?origin=" + origin.latitude + "," + origin.longitude + "&destination=" + dest.latitude + "," + dest.longitude + "&key=" + key;
-                Response resp = new OkHttpClient().newCall(new Request.Builder().url(url).build()).execute();
-                JSONObject json = new JSONObject(resp.body().string());
-                if ("OK".equals(json.optString("status"))) {
-                    JSONObject route = json.getJSONArray("routes").getJSONObject(0);
-                    JSONObject leg = route.getJSONArray("legs").getJSONObject(0);
-                    List<LatLng> path = PolyUtil.decode(route.getJSONObject("overview_polyline").getString("points"));
-                    String dur = leg.getJSONObject("duration").getString("text");
-                    String dist = leg.getJSONObject("distance").getString("text");
-                    handler.post(() -> {
-                        if (currentPolyline != null) currentPolyline.remove();
-                        currentPolyline = mMap.addPolyline(new PolylineOptions().addAll(path).color(Color.BLUE).width(15));
-                        tvEstimasi.setText("Tiba dalam " + dur + " (" + dist + ")");
-                    });
+                
+                try (Response resp = new OkHttpClient().newCall(new Request.Builder().url(url).build()).execute()) {
+                    ResponseBody body = resp.body();
+                    if (body == null) return;
+                    JSONObject json = new JSONObject(body.string());
+                    if ("OK".equals(json.optString("status"))) {
+                        JSONObject leg = json.getJSONArray("routes").getJSONObject(0).getJSONArray("legs").getJSONObject(0);
+                        String durationText = leg.getJSONObject("duration").getString("text");
+                        List<LatLng> path = PolyUtil.decode(json.getJSONArray("routes").getJSONObject(0).getJSONObject("overview_polyline").getString("points"));
+                        
+                        handler.post(() -> {
+                            if (currentPolyline != null) currentPolyline.remove();
+                            currentPolyline = mMap.addPolyline(new PolylineOptions().addAll(path).color(Color.BLUE).width(15));
+                            tvEstimasi.setText("Tiba dalam " + durationText);
+                        });
+                    }
                 }
             } catch (Exception e) { Log.e(TAG, "Route Error", e); }
         });

@@ -2,6 +2,7 @@ package com.example.patientapp;
 
 import android.util.Log;
 import com.hivemq.client.mqtt.MqttClient;
+import com.hivemq.client.mqtt.datatypes.MqttQos;
 import com.hivemq.client.mqtt.mqtt3.Mqtt3AsyncClient;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
@@ -14,7 +15,7 @@ public class MqttClientManager {
     private Mqtt3AsyncClient client;
 
     private static final String SERVER_HOST = BuildConfig.MQTT_HOST;
-    private static final int SERVER_PORT = 8883; // Port MQTTS umum (SSL)
+    private static final int SERVER_PORT = 1883;
     private static final String USERNAME = BuildConfig.MQTT_USERNAME;
     private static final String PASSWORD = BuildConfig.MQTT_PASSWORD;
 
@@ -48,13 +49,12 @@ public class MqttClientManager {
 
         String clientId = "Android_" + UUID.randomUUID().toString().substring(0, 8);
 
-        // Build Client Dasar dengan TLS (SSL)
+        // Build Client Dasar (MQTT Non-Secure)
         client = MqttClient.builder()
                 .useMqttVersion3()
                 .identifier(clientId)
                 .serverHost(SERVER_HOST)
                 .serverPort(SERVER_PORT)
-                .sslWithDefaultConfig() // MENGAKTIFKAN TLS/SSL (MQTTS)
                 .automaticReconnectWithDefaultConfig() // Auto Reconnect
                 .buildAsync();
 
@@ -69,10 +69,10 @@ public class MqttClientManager {
                 .send()
                 .whenComplete((connAck, throwable) -> {
                     if (throwable != null) {
-                        Log.e(TAG, "Gagal Connect (MQTTS): " + throwable.getMessage());
+                        Log.e(TAG, "Gagal Connect (MQTT): " + throwable.getMessage());
                         if (listener != null) listener.onError(throwable.getMessage());
                     } else {
-                        Log.d(TAG, "BERHASIL CONNECT ke " + SERVER_HOST + " via MQTTS");
+                        Log.d(TAG, "BERHASIL CONNECT ke " + SERVER_HOST + " via MQTT (Non-Secure)");
                         if (listener != null) listener.onSuccess();
                     }
                 });
@@ -88,6 +88,7 @@ public class MqttClientManager {
 
         client.subscribeWith()
                 .topicFilter(topic)
+                .qos(MqttQos.AT_LEAST_ONCE) // Set QoS level 1 untuk Subscribe
                 .callback(publish -> {
                     // Convert byte[] ke String otomatis
                     String message = new String(publish.getPayloadAsBytes(), StandardCharsets.UTF_8);
@@ -114,6 +115,7 @@ public class MqttClientManager {
         client.publishWith()
                 .topic(topic)
                 .payload(message.getBytes(StandardCharsets.UTF_8))
+                .qos(MqttQos.AT_LEAST_ONCE) // Set QoS level 1 (At Least Once)
                 .send()
                 .whenComplete((publish, throwable) -> {
                     if (throwable != null) {

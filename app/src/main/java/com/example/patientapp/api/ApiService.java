@@ -16,7 +16,6 @@ import retrofit2.http.POST;
 import retrofit2.http.Part;
 import retrofit2.http.Path;
 
-// Interface Retrofit
 public interface ApiService {
 
     @FormUrlEncoded
@@ -35,7 +34,7 @@ public interface ApiService {
             @Part("jenis_kelamin") RequestBody jk,
             @Part("alamat") RequestBody alamat,
             @Part("password") RequestBody password,
-            @Part MultipartBody.Part fotoKtp // File Gambar
+            @Part MultipartBody.Part fotoKtp
     );
 
     public class HistoryResponse {
@@ -43,10 +42,31 @@ public interface ApiService {
         boolean error;
         @SerializedName("data")
         List<HistoryModel> data;
-
         public List<HistoryModel> getData() { return data; }
     }
 
     @GET("transaksi/riwayat/{id}")
     Call<HistoryResponse> getRiwayat(@Path("id") String idPasien);
+
+    // Update endpoint ini: Sesuaikan dengan struktur yang mungkin ada di backend
+    @GET("ambulans/detail/{id}")
+    Call<AmbulansResponse> getAmbulansDetail(@Path("id") String idAmbulans);
+
+    public class AmbulansResponse {
+        @SerializedName("error")
+        public boolean error;
+        @SerializedName("data")
+        public AmbulansData data;
+        @SerializedName("message")
+        public String message;
+    }
+
+    public class AmbulansData {
+        @SerializedName("nama_driver")
+        public String namaDriver;
+        @SerializedName("nomor_polisi")
+        public String nomorPolisi;
+        @SerializedName("no_polisi")
+        public String noPolisi;
+    }
 }
